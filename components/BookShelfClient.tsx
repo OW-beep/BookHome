@@ -13,22 +13,25 @@ import {
   PencilLine,
   LogOut,
 } from "lucide-react";
-import { Book, GENRES, COVER_COLORS, EMOJIS } from "@/lib/types";
+import { Book, ReadingLog, GENRES, COVER_COLORS, EMOJIS } from "@/lib/types";
 import {
   addBook,
   updateBook,
   deleteBook,
   addComment,
   signOut,
+  logRead,
   NewBookInput,
 } from "@/app/library/actions";
+import StatsModal from "@/components/StatsModal";
+import { BarChart3 } from "lucide-react";
 
 const MOCK_ISBN_BOOKS = [
-  { title: "ぐるぐるの森のひみつ", author: "きしもと ゆう", genre: "えほん", emoji: "🌳" },
-  { title: "きょうりゅう大図鑑 スーパーばん", author: "監修 いのうえ たかし", genre: "ずかん", emoji: "🦕" },
-  { title: "そらとぶパン工場", author: "たなか みずき", genre: "えほん", emoji: "🥐" },
-  { title: "ほしのカケラをさがして", author: "みうら はな", genre: "しょうせつ", emoji: "🌙" },
-  { title: "うちゅうたんけんずかん", author: "監修 さとう けん", genre: "ずかん", emoji: "🚀" },
+  { title: "ぐるぐるの森のひみつ", author: "きしもと ゆう", genre: "えほん", emoji: "🌳", publisher: "こだま書房", list_price: 1200 },
+  { title: "きょうりゅう大図鑑 スーパーばん", author: "監修 いのうえ たかし", genre: "ずかん", emoji: "🦕", publisher: "みらい館", list_price: 2400 },
+  { title: "そらとぶパン工場", author: "たなか みずき", genre: "えほん", emoji: "🥐", publisher: "ひまわり社", list_price: 1100 },
+  { title: "ほしのカケラをさがして", author: "みうら はな", genre: "しょうせつ", emoji: "🌙", publisher: "つき出版", list_price: 1500 },
+  { title: "うちゅうたんけんずかん", author: "監修 さとう けん", genre: "ずかん", emoji: "🚀", publisher: "みらい館", list_price: 2200 },
 ];
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -39,13 +42,19 @@ function chunk<T>(arr: T[], size: number): T[][] {
 
 export default function BookShelfClient({
   initialBooks,
+  initialReadingLogs,
   userEmail,
 }: {
   initialBooks: Book[];
+  initialReadingLogs: ReadingLog[];
   userEmail: string;
 }) {
   const [books, setBooks] = useState<Book[]>(initialBooks);
+  const [readingLogs, setReadingLogs] =
+    useState<ReadingLog[]>(initialReadingLogs);
   const [isPending, startTransition] = useTransition();
+  const [showStats, setShowStats] = useState(false);
+  const [readMinutes, setReadMinutes] = useState("");
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -57,6 +66,9 @@ export default function BookShelfClient({
     cover_color: COVER_COLORS[0],
     cover_emoji: EMOJIS[0],
   });
+  const [publisherInput, setPublisherInput] = useState("");
+  const [listPriceInput, setListPriceInput] = useState("");
+  const [purchasePriceInput, setPurchasePriceInput] = useState("");
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [genreFilter, setGenreFilter] = useState("すべて");
@@ -91,6 +103,9 @@ export default function BookShelfClient({
       cover_color: COVER_COLORS[0],
       cover_emoji: EMOJIS[0],
     });
+    setPublisherInput("");
+    setListPriceInput("");
+    setPurchasePriceInput("");
     setScannedBadge(false);
   }
 
@@ -112,6 +127,8 @@ export default function BookShelfClient({
           COVER_COLORS[Math.floor(Math.random() * COVER_COLORS.length)],
         cover_emoji: pick.emoji,
       });
+      setPublisherInput(pick.publisher);
+      setListPriceInput(String(pick.list_price));
       setScanning(false);
       setScannedBadge(true);
     }, 900);
@@ -121,8 +138,14 @@ export default function BookShelfClient({
     e.preventDefault();
     if (!form.title.trim()) return;
     setShowAddModal(false);
+    const payload: NewBookInput = {
+      ...form,
+      publisher: publisherInput.trim() || undefined,
+      list_price: listPriceInput ? Number(listPriceInput) : null,
+      purchase_price: purchasePriceInput ? Number(purchasePriceInput) : null,
+    };
     startTransition(async () => {
-      await addBook(form);
+      await addBook(payload);
     });
   }
 
@@ -134,9 +157,20 @@ export default function BookShelfClient({
 
   function handleAddRead(book: Book) {
     const next = book.read_count + 1;
+    const minutes = readMinutes ? Number(readMinutes) : null;
     optimisticPatch(book.id, { read_count: next });
+    setReadingLogs((prev) => [
+      ...prev,
+      {
+        id: `temp-${Date.now()}`,
+        book_id: book.id,
+        minutes,
+        read_at: new Date().toISOString(),
+      },
+    ]);
+    setReadMinutes("");
     startTransition(async () => {
-      await updateBook(book.id, { read_count: next });
+      await logRead(book.id, book.read_count, minutes);
     });
   }
 
@@ -253,6 +287,13 @@ export default function BookShelfClient({
         >
           <LogOut size={12} /> {userEmail} をログアウト
         </button>
+        <button
+          className="bh-signout"
+          style={{ left: 20, right: "auto" }}
+          onClick={() => setShowStats(true)}
+        >
+          <BarChart3 size={12} /> 統計
+        </button>
         <div className="bh-logo-row">
           <svg width="32" height="32" viewBox="0 0 64 64" fill="none">
             <path d="M32 10L54 20V52C54 52 44 46 32 46C20 46 10 52 10 52V20L32 10Z" fill="#FFC94A" stroke="#33415C" strokeWidth="3" strokeLinejoin="round"/>
@@ -368,6 +409,20 @@ export default function BookShelfClient({
                 </select>
               </div>
               <div className="bh-field">
+                <label>出版社（任意）</label>
+                <input value={publisherInput} onChange={(e) => setPublisherInput(e.target.value)} placeholder="例：福音館書店" />
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <div className="bh-field" style={{ flex: 1 }}>
+                  <label>定価（円・任意）</label>
+                  <input type="number" min="0" value={listPriceInput} onChange={(e) => setListPriceInput(e.target.value)} placeholder="1200" />
+                </div>
+                <div className="bh-field" style={{ flex: 1 }}>
+                  <label>購入価格（円・任意）</label>
+                  <input type="number" min="0" value={purchasePriceInput} onChange={(e) => setPurchasePriceInput(e.target.value)} placeholder="980" />
+                </div>
+              </div>
+              <div className="bh-field">
                 <label>表紙の色</label>
                 <div className="bh-swatches">
                   {COVER_COLORS.map((c) => (
@@ -418,7 +473,17 @@ export default function BookShelfClient({
             <div className="bh-read-section">
               <div style={{ fontSize: 12, color: "#7A88A3", fontWeight: 700 }}>よんだ回数</div>
               <div className="bh-read-count">{selectedBook.read_count} 回</div>
-              <button className="bh-read-btn" onClick={() => handleAddRead(selectedBook)}>きょう読んだ！ +1</button>
+              <div style={{ display: "flex", gap: 6, justifyContent: "center", alignItems: "center", marginTop: 8 }}>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="分（任意）"
+                  value={readMinutes}
+                  onChange={(e) => setReadMinutes(e.target.value)}
+                  style={{ width: 90, border: "2px solid #E3ECF3", borderRadius: 10, padding: "6px 10px", fontFamily: "inherit", fontSize: 13, outline: "none" }}
+                />
+                <button className="bh-read-btn" style={{ marginTop: 0 }} onClick={() => handleAddRead(selectedBook)}>きょう読んだ！ +1</button>
+              </div>
             </div>
 
             <div className="bh-comments-title">おもいで・コメント</div>
@@ -443,6 +508,13 @@ export default function BookShelfClient({
             </div>
           </div>
         </div>
+      )}
+      {showStats && (
+        <StatsModal
+          books={books}
+          readingLogs={readingLogs}
+          onClose={() => setShowStats(false)}
+        />
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { Book } from "@/lib/types";
+import { Book, ReadingLog } from "@/lib/types";
 import BookShelfClient from "@/components/BookShelfClient";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +15,10 @@ export default async function LibraryPage() {
     .from("books")
     .select("*, book_comments(*)")
     .order("created_at", { ascending: false });
+
+  const { data: readingLogs } = await supabase
+    .from("reading_logs")
+    .select("id, book_id, minutes, read_at");
 
   if (error) {
     return (
@@ -32,6 +36,7 @@ export default async function LibraryPage() {
   return (
     <BookShelfClient
       initialBooks={(data ?? []) as Book[]}
+      initialReadingLogs={(readingLogs ?? []) as ReadingLog[]}
       userEmail={user?.email ?? ""}
     />
   );

@@ -43,6 +43,16 @@ export type Book = {
   rating: number;
   favorite: boolean;
   read_count: number;
+  publisher: string | null;
+  list_price: number | null;
+  purchase_price: number | null;
   created_at: string;
   book_comments: BookComment[];
+};
+
+export type ReadingLog = {
+  id: string;
+  book_id: string;
+  minutes: number | null;
+  read_at: string;
 };

@@ -9,6 +9,9 @@ export type NewBookInput = {
   genre: string;
   cover_color: string;
   cover_emoji: string;
+  publisher?: string;
+  list_price?: number | null;
+  purchase_price?: number | null;
 };
 
 export async function addBook(input: NewBookInput) {
@@ -25,9 +28,39 @@ export async function addBook(input: NewBookInput) {
     genre: input.genre,
     cover_color: input.cover_color,
     cover_emoji: input.cover_emoji,
+    publisher: input.publisher || null,
+    list_price: input.list_price ?? null,
+    purchase_price: input.purchase_price ?? null,
   });
 
   if (error) throw new Error(error.message);
+  revalidatePath("/library");
+}
+
+export async function logRead(
+  bookId: string,
+  currentReadCount: number,
+  minutes: number | null
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("ログインが必要です");
+
+  const { error: logError } = await supabase.from("reading_logs").insert({
+    book_id: bookId,
+    user_id: user.id,
+    minutes,
+  });
+  if (logError) throw new Error(logError.message);
+
+  const { error: updateError } = await supabase
+    .from("books")
+    .update({ read_count: currentReadCount + 1 })
+    .eq("id", bookId);
+  if (updateError) throw new Error(updateError.message);
+
   revalidatePath("/library");
 }
 
