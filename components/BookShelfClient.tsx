@@ -26,6 +26,7 @@ import {
   NewBookInput,
 } from "@/app/library/actions";
 import StatsModal from "@/components/StatsModal";
+import { buildRakutenBookLink } from "@/lib/affiliate";
 import { BarChart3 } from "lucide-react";
 
 type ScanStatus =
@@ -450,6 +451,10 @@ export default function BookShelfClient({
         .bh-detail-title { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900; font-size: 18px; text-align: center; }
         .bh-detail-author { text-align: center; font-size: 13px; color: #7A88A3; margin-top: 4px; }
         .bh-genre-tag { display: block; text-align: center; margin: 8px auto 14px; font-size: 11px; font-weight: 700; color: #33415C; background: #EAF4FB; border-radius: 999px; padding: 3px 12px; width: fit-content; }
+        .bh-affiliate-wrap { text-align: center; margin-bottom: 16px; }
+        .bh-affiliate-btn { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 2px solid #FFC94A; color: #33415C; text-decoration: none; font-weight: 700; font-size: 13px; padding: 8px 16px; border-radius: 999px; }
+        .bh-pr-badge { background: #FFC94A; color: #7A5A00; font-size: 9px; font-weight: 900; padding: 1px 6px; border-radius: 999px; }
+        .bh-affiliate-note { font-size: 10px; color: #B0BBCC; margin-top: 6px; }
         .bh-row-actions { display: flex; justify-content: center; gap: 14px; margin-bottom: 16px; }
         .bh-icon-btn { background: #fff; border: none; border-radius: 999px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 3px 0 rgba(51,65,92,0.08); color: #B9CBDD; }
         .bh-icon-btn.on { color: #FF8FA0; }
@@ -486,7 +491,11 @@ export default function BookShelfClient({
       <div className="bh-header">
         <button
           className="bh-signout"
-          onClick={() => startTransition(async () => await signOut())}
+          onClick={() => {
+            if (window.confirm("ログアウトしますか？次にログインするには、もう一度メールでの認証が必要です。")) {
+              startTransition(async () => await signOut());
+            }
+          }}
         >
           <LogOut size={12} /> {userEmail} をログアウト
         </button>
@@ -781,6 +790,20 @@ export default function BookShelfClient({
             <div className="bh-detail-title">{selectedBook.title}</div>
             <div className="bh-detail-author">{selectedBook.author}</div>
             <div className="bh-genre-tag">{selectedBook.genre}</div>
+
+            <div className="bh-affiliate-wrap">
+              <a
+                className="bh-affiliate-btn"
+                href={buildRakutenBookLink({ isbn: selectedBook.isbn, title: selectedBook.title })}
+                target="_blank"
+                rel="noopener noreferrer nofollow sponsored"
+              >
+                🛒 楽天ブックスで探す <span className="bh-pr-badge">PR</span>
+              </a>
+              <div className="bh-affiliate-note">
+                このリンクから購入すると、運営者に紹介料が入ることがあります
+              </div>
+            </div>
 
             <div className="bh-row-actions">
               <button className={`bh-icon-btn ${selectedBook.favorite ? "on" : ""}`} onClick={() => handleToggleFavorite(selectedBook)}>
