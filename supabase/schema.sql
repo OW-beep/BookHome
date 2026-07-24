@@ -27,6 +27,9 @@ create table if not exists public.reading_logs (
   book_id uuid references public.books(id) on delete cascade not null,
   user_id uuid references auth.users not null default auth.uid(),
   minutes int,
+  reading_type text not null default 'self_read',
+  readers text[],
+  completed boolean not null default true,
   read_at timestamptz not null default now()
 );
 

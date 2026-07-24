@@ -18,7 +18,7 @@ export default async function LibraryPage() {
 
   const { data: readingLogs } = await supabase
     .from("reading_logs")
-    .select("id, book_id, minutes, read_at");
+    .select("id, book_id, minutes, reading_type, readers, completed, read_at");
 
   if (error) {
     return (

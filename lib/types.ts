@@ -20,7 +20,11 @@ export const COVER_COLORS = [
 ] as const;
 
 export const EMOJIS = [
-  "📕", "📗", "📘", "📙", "📓", "🦕", "🚀", "🐻", "🌙", "🍎", "⭐", "🌈",
+  "📕", "📗", "📘", "📙", "📓", "📔", "📒", "📚",
+  "🦕", "🦖", "🐻", "🐰", "🦉", "🐱", "🐶", "🦁",
+  "🐸", "🐢", "🐘", "🦋", "🐟", "🦄", "🐦", "🐼",
+  "🚀", "🌙", "⭐", "🌈", "☀️", "🌳", "🌸", "🍎",
+  "🍰", "🥐", "🎂", "🎈", "🏠", "❤️", "🚗", "⚽",
 ] as const;
 
 export type Genre = (typeof GENRES)[number];
@@ -52,9 +56,14 @@ export type Book = {
   book_comments: BookComment[];
 };
 
+export type ReadingType = "self_read" | "read_aloud";
+
 export type ReadingLog = {
   id: string;
   book_id: string;
   minutes: number | null;
+  reading_type: ReadingType;
+  readers: string[] | null;
+  completed: boolean;
   read_at: string;
 };

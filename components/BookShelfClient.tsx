@@ -18,6 +18,7 @@ import { Book, ReadingLog, GENRES, COVER_COLORS, EMOJIS } from "@/lib/types";
 import {
   addBook,
   updateBook,
+  updateBookDetails,
   deleteBook,
   addComment,
   signOut,
@@ -56,12 +57,25 @@ export default function BookShelfClient({
   const [isPending, startTransition] = useTransition();
   const [showStats, setShowStats] = useState(false);
   const [readMinutes, setReadMinutes] = useState("");
+  const [readDate, setReadDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [readingType, setReadingType] = useState<"self_read" | "read_aloud">("self_read");
+  const [readersList, setReadersList] = useState<string[]>([]);
+  const [readerInput, setReaderInput] = useState("");
+  const [readCompleted, setReadCompleted] = useState(true);
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addMode, setAddMode] = useState<"barcode" | "title">("barcode");
   const [scanStatus, setScanStatus] = useState<ScanStatus>("idle");
   const [scannedBadge, setScannedBadge] = useState(false);
   const [scannedIsbn, setScannedIsbn] = useState<string | null>(null);
   const [scannedCoverUrl, setScannedCoverUrl] = useState<string | null>(null);
+  const [titleQuery, setTitleQuery] = useState("");
+  const [titleResults, setTitleResults] = useState<
+    { isbn: string | null; title: string; author: string | null; publisher: string | null; cover_image_url: string | null }[]
+  >([]);
+  const [titleSearching, setTitleSearching] = useState(false);
+  const [titleSearched, setTitleSearched] = useState(false);
+  const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const scanLockRef = useRef(false);
@@ -116,6 +130,11 @@ export default function BookShelfClient({
     setScannedIsbn(null);
     setScannedCoverUrl(null);
     setScanStatus("idle");
+    setAddMode("barcode");
+    setTitleQuery("");
+    setTitleResults([]);
+    setTitleSearched(false);
+    setEditingBookId(null);
   }
 
   function stopCameraScan() {
@@ -125,6 +144,24 @@ export default function BookShelfClient({
 
   function openAddModal() {
     resetForm();
+    setShowAddModal(true);
+  }
+
+  function openEditModal(book: Book) {
+    resetForm();
+    setEditingBookId(book.id);
+    setForm({
+      title: book.title,
+      author: book.author ?? "",
+      genre: book.genre,
+      cover_color: book.cover_color,
+      cover_emoji: book.cover_emoji,
+    });
+    setPublisherInput(book.publisher ?? "");
+    setListPriceInput(book.list_price != null ? String(book.list_price) : "");
+    setPurchasePriceInput(book.purchase_price != null ? String(book.purchase_price) : "");
+    setScannedIsbn(book.isbn ?? null);
+    setScannedCoverUrl(book.cover_image_url ?? null);
     setShowAddModal(true);
   }
 
@@ -196,6 +233,37 @@ export default function BookShelfClient({
     }
   }
 
+  async function handleTitleSearch() {
+    if (!titleQuery.trim()) return;
+    setTitleSearching(true);
+    setTitleSearched(false);
+    try {
+      const res = await fetch(`/api/book-search?q=${encodeURIComponent(titleQuery.trim())}`);
+      const data = await res.json();
+      setTitleResults(data.results ?? []);
+    } catch {
+      setTitleResults([]);
+    } finally {
+      setTitleSearching(false);
+      setTitleSearched(true);
+    }
+  }
+
+  function handleSelectTitleResult(result: {
+    isbn: string | null;
+    title: string;
+    author: string | null;
+    publisher: string | null;
+    cover_image_url: string | null;
+  }) {
+    setForm((f) => ({ ...f, title: result.title, author: result.author ?? "" }));
+    setPublisherInput(result.publisher ?? "");
+    setScannedIsbn(result.isbn);
+    setScannedCoverUrl(result.cover_image_url);
+    setScannedBadge(true);
+    setTitleResults([]);
+  }
+
   function submitBook(e: React.FormEvent) {
     e.preventDefault();
     if (!form.title.trim()) return;
@@ -208,9 +276,29 @@ export default function BookShelfClient({
       isbn: scannedIsbn,
       cover_image_url: scannedCoverUrl,
     };
-    startTransition(async () => {
-      await addBook(payload);
-    });
+
+    if (editingBookId) {
+      const id = editingBookId;
+      optimisticPatch(id, {
+        title: payload.title,
+        author: payload.author || null,
+        genre: payload.genre,
+        cover_color: payload.cover_color,
+        cover_emoji: payload.cover_emoji,
+        publisher: payload.publisher ?? null,
+        list_price: payload.list_price ?? null,
+        purchase_price: payload.purchase_price ?? null,
+        isbn: payload.isbn ?? null,
+        cover_image_url: payload.cover_image_url ?? null,
+      });
+      startTransition(async () => {
+        await updateBookDetails(id, payload);
+      });
+    } else {
+      startTransition(async () => {
+        await addBook(payload);
+      });
+    }
   }
 
   function optimisticPatch(id: string, patch: Partial<Book>) {
@@ -219,9 +307,26 @@ export default function BookShelfClient({
     );
   }
 
+  function addReaderChip() {
+    const name = readerInput.trim();
+    if (name && !readersList.includes(name)) {
+      setReadersList((prev) => [...prev, name]);
+    }
+    setReaderInput("");
+  }
+
+  function removeReaderChip(name: string) {
+    setReadersList((prev) => prev.filter((n) => n !== name));
+  }
+
   function handleAddRead(book: Book) {
     const next = book.read_count + 1;
     const minutes = readMinutes ? Number(readMinutes) : null;
+    const readAtIso = new Date(`${readDate}T12:00:00`).toISOString();
+    const readers = readerInput.trim()
+      ? [...readersList, readerInput.trim()]
+      : readersList;
+
     optimisticPatch(book.id, { read_count: next });
     setReadingLogs((prev) => [
       ...prev,
@@ -229,13 +334,28 @@ export default function BookShelfClient({
         id: `temp-${Date.now()}`,
         book_id: book.id,
         minutes,
-        read_at: new Date().toISOString(),
+        reading_type: readingType,
+        readers: readers.length > 0 ? readers : null,
+        completed: readCompleted,
+        read_at: readAtIso,
       },
     ]);
-    setReadMinutes("");
+
     startTransition(async () => {
-      await logRead(book.id, book.read_count, minutes);
+      await logRead(book.id, book.read_count, {
+        minutes,
+        read_at: readAtIso,
+        reading_type: readingType,
+        readers,
+        completed: readCompleted,
+      });
     });
+
+    setReadMinutes("");
+    setReadersList([]);
+    setReaderInput("");
+    setReadCompleted(true);
+    setReadDate(new Date().toISOString().slice(0, 10));
   }
 
   function handleSetRating(book: Book, rating: number) {
@@ -309,6 +429,9 @@ export default function BookShelfClient({
         .bh-modal-close { position: absolute; top: 16px; right: 16px; background: #EAF4FB; border: none; border-radius: 999px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #33415C; }
         .bh-modal-title { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900; font-size: 19px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
         .bh-scan-box { border: 2px dashed #B9CBDD; border-radius: 16px; padding: 28px 16px; text-align: center; margin-bottom: 14px; }
+        .bh-tabbar { display: flex; gap: 6px; margin-bottom: 14px; background: #EAF4FB; padding: 4px; border-radius: 14px; }
+        .bh-tab { flex: 1; border: none; background: transparent; padding: 9px 8px; border-radius: 10px; font-family: inherit; font-weight: 700; font-size: 13px; color: #7A88A3; cursor: pointer; }
+        .bh-tab.active { background: #fff; color: #33415C; box-shadow: 0 2px 0 rgba(51,65,92,0.08); }
         .bh-scan-btn { margin-top: 12px; background: #7FB8E0; color: #fff; border: none; border-radius: 12px; padding: 10px 20px; font-weight: 700; font-family: inherit; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 0 #5C93BD; }
         .bh-scan-pulse { width: 46px; height: 46px; border-radius: 50%; background: #7FB8E0; margin: 0 auto; animation: bh-pulse 0.9s ease-in-out infinite; }
         @keyframes bh-pulse { 0%, 100% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } }
@@ -331,7 +454,23 @@ export default function BookShelfClient({
         .bh-icon-btn { background: #fff; border: none; border-radius: 999px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 3px 0 rgba(51,65,92,0.08); color: #B9CBDD; }
         .bh-icon-btn.on { color: #FF8FA0; }
         .bh-stars { display: flex; justify-content: center; gap: 4px; margin-bottom: 16px; }
-        .bh-read-section { background: #EAF4FB; border-radius: 14px; padding: 12px 14px; text-align: center; margin-bottom: 16px; }
+        .bh-read-section { background: #EAF4FB; border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
+        .bh-read-type-row { display: flex; gap: 6px; justify-content: center; margin: 10px 0 8px; }
+        .bh-type-btn { border: none; background: #fff; padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #7A88A3; cursor: pointer; }
+        .bh-type-btn.active { background: #7FB8E0; color: #fff; }
+        .bh-read-row { display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+        .bh-read-date-input { border: 2px solid #E3ECF3; border-radius: 10px; padding: 6px 10px; font-family: inherit; font-size: 12px; outline: none; }
+        .bh-readers-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+        .bh-reader-chip { background: #fff; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: #33415C; display: inline-flex; align-items: center; gap: 4px; }
+        .bh-reader-chip button { border: none; background: none; color: #B0BBCC; cursor: pointer; font-size: 12px; line-height: 1; padding: 0; }
+        .bh-reader-input { border: 2px solid #E3ECF3; border-radius: 10px; padding: 6px 10px; font-family: inherit; font-size: 12px; outline: none; width: 110px; }
+        .bh-completed-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #33415C; font-weight: 700; }
+        .bh-log-history { margin: 4px 0 16px; }
+        .bh-log-item { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 10px; padding: 8px 12px; font-size: 12px; margin-bottom: 6px; color: #33415C; }
+        .bh-log-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #EAF4FB; color: #33415C; flex-shrink: 0; }
+        .bh-log-date { color: #7A88A3; font-size: 11px; flex-shrink: 0; }
+        .bh-log-readers { color: #7A88A3; font-size: 11px; }
+        .bh-comments-title { font-size: 12px; font-weight: 700; color: #7A88A3; margin-bottom: 8px; }
         .bh-read-count { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900; font-size: 22px; color: #33415C; }
         .bh-read-btn { margin-top: 8px; background: #7EC98C; color: #fff; border: none; border-radius: 10px; padding: 8px 16px; font-weight: 700; font-family: inherit; font-size: 13px; cursor: pointer; box-shadow: 0 3px 0 #58A466; }
         .bh-comments-title { font-size: 12px; font-weight: 700; color: #7A88A3; margin-bottom: 8px; }
@@ -436,62 +575,132 @@ export default function BookShelfClient({
         <div className="bh-modal-backdrop" onClick={closeAddModal}>
           <div className="bh-modal" onClick={(e) => e.stopPropagation()}>
             <button className="bh-modal-close" onClick={closeAddModal}><X size={16} /></button>
-            <div className="bh-modal-title"><Sparkles size={18} color="#FFC94A" /> 本を登録する</div>
+            <div className="bh-modal-title">
+              <Sparkles size={18} color="#FFC94A" /> {editingBookId ? "本を編集する" : "本を登録する"}
+            </div>
 
-            {scanStatus === "idle" && (
-              <div className="bh-scan-box">
-                <ScanLine size={30} color="#7FB8E0" style={{ margin: "0 auto", display: "block" }} />
-                <div style={{ marginTop: 8, fontSize: 12, color: "#7A88A3" }}>本のバーコード（ISBN）をカメラで読み取ります</div>
-                <button className="bh-scan-btn" type="button" onClick={startCameraScan}>
-                  <ScanLine size={14} /> カメラでスキャンする
-                </button>
-              </div>
+            {!editingBookId && (
+              <>
+                <div className="bh-tabbar">
+                  <button type="button" className={`bh-tab ${addMode === "barcode" ? "active" : ""}`} onClick={() => setAddMode("barcode")}>
+                    📷 バーコード
+                  </button>
+                  <button type="button" className={`bh-tab ${addMode === "title" ? "active" : ""}`} onClick={() => setAddMode("title")}>
+                    🔍 タイトルで検索
+                  </button>
+                </div>
+
+                {addMode === "barcode" && (
+                  <>
+                    {scanStatus === "idle" && (
+                      <div className="bh-scan-box">
+                        <ScanLine size={30} color="#7FB8E0" style={{ margin: "0 auto", display: "block" }} />
+                        <div style={{ marginTop: 8, fontSize: 12, color: "#7A88A3" }}>本のバーコード（ISBN）をカメラで読み取ります</div>
+                        <button className="bh-scan-btn" type="button" onClick={startCameraScan}>
+                          <ScanLine size={14} /> カメラでスキャンする
+                        </button>
+                      </div>
+                    )}
+
+                    {scanStatus === "camera" && (
+                      <div className="bh-scan-box" style={{ padding: 12 }}>
+                        <video ref={videoRef} muted playsInline autoPlay style={{ width: "100%", borderRadius: 12, display: "block" }} />
+                        <div style={{ marginTop: 8, fontSize: 12, color: "#7A88A3" }}>裏表紙のバーコードを枠内に映してください</div>
+                        <button
+                          className="bh-scan-btn"
+                          type="button"
+                          style={{ background: "#B0BBCC", boxShadow: "0 4px 0 #8B97A8" }}
+                          onClick={() => { stopCameraScan(); setScanStatus("idle"); }}
+                        >
+                          キャンセル
+                        </button>
+                      </div>
+                    )}
+
+                    {scanStatus === "looking_up" && (
+                      <div className="bh-scan-box">
+                        <div className="bh-scan-pulse" />
+                        <div style={{ marginTop: 10, fontSize: 13, color: "#7A88A3" }}>書籍情報を検索中...</div>
+                      </div>
+                    )}
+
+                    {scanStatus === "not_found" && (
+                      <div className="bh-scan-box">
+                        <div style={{ fontSize: 13, color: "#D98A8A", marginBottom: 10 }}>😢 見つかりませんでした。「タイトルで検索」タブか、下のフォームに手入力してください</div>
+                        <button className="bh-scan-btn" type="button" onClick={startCameraScan}>
+                          <ScanLine size={14} /> もう一度スキャン
+                        </button>
+                      </div>
+                    )}
+
+                    {scanStatus === "camera_error" && (
+                      <div className="bh-scan-box">
+                        <div style={{ fontSize: 13, color: "#D98A8A" }}>カメラを起動できませんでした。ブラウザのカメラ許可設定をご確認いただくか、下のフォームに手入力してください。</div>
+                      </div>
+                    )}
+
+                    {scanStatus === "found" && scannedCoverUrl && (
+                      <div style={{ textAlign: "center", marginBottom: 10 }}>
+                        <img src={scannedCoverUrl} alt="表紙" style={{ height: 90, borderRadius: 8, boxShadow: "0 4px 10px rgba(0,0,0,0.15)" }} />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {addMode === "title" && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, color: "#7A88A3", marginBottom: 8 }}>
+                      図書館で借りた本など、バーコードが手元にない場合はタイトルで探せます
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input
+                        placeholder="本のタイトルを入力"
+                        value={titleQuery}
+                        onChange={(e) => setTitleQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleTitleSearch())}
+                        style={{ flex: 1, border: "2px solid #E3ECF3", borderRadius: 10, padding: "9px 12px", fontFamily: "inherit", fontSize: 14, outline: "none" }}
+                      />
+                      <button type="button" className="bh-scan-btn" style={{ marginTop: 0 }} onClick={handleTitleSearch}>
+                        <Search size={14} /> 検索
+                      </button>
+                    </div>
+
+                    {titleSearching && (
+                      <div style={{ fontSize: 12, color: "#7A88A3", marginTop: 10 }}>検索中...</div>
+                    )}
+
+                    {!titleSearching && titleSearched && titleResults.length === 0 && (
+                      <div style={{ fontSize: 12, color: "#D98A8A", marginTop: 10 }}>見つかりませんでした。下のフォームに手入力してください</div>
+                    )}
+
+                    {titleResults.length > 0 && (
+                      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6, maxHeight: 200, overflowY: "auto" }}>
+                        {titleResults.map((r, i) => (
+                          <button
+                            type="button"
+                            key={i}
+                            onClick={() => handleSelectTitleResult(r)}
+                            style={{ display: "flex", gap: 10, alignItems: "center", background: "#fff", border: "none", borderRadius: 10, padding: 8, textAlign: "left", cursor: "pointer" }}
+                          >
+                            {r.cover_image_url ? (
+                              <img src={r.cover_image_url} alt="" style={{ width: 32, height: 44, objectFit: "cover", borderRadius: 4, flexShrink: 0 }} />
+                            ) : (
+                              <div style={{ width: 32, height: 44, background: "#EAF4FB", borderRadius: 4, flexShrink: 0 }} />
+                            )}
+                            <div style={{ fontSize: 12 }}>
+                              <div style={{ fontWeight: 700, color: "#33415C" }}>{r.title}</div>
+                              <div style={{ color: "#7A88A3", fontSize: 11 }}>{r.author}{r.publisher ? ` / ${r.publisher}` : ""}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
 
-            {scanStatus === "camera" && (
-              <div className="bh-scan-box" style={{ padding: 12 }}>
-                <video ref={videoRef} muted playsInline autoPlay style={{ width: "100%", borderRadius: 12, display: "block" }} />
-                <div style={{ marginTop: 8, fontSize: 12, color: "#7A88A3" }}>裏表紙のバーコードを枠内に映してください</div>
-                <button
-                  className="bh-scan-btn"
-                  type="button"
-                  style={{ background: "#B0BBCC", boxShadow: "0 4px 0 #8B97A8" }}
-                  onClick={() => { stopCameraScan(); setScanStatus("idle"); }}
-                >
-                  キャンセル
-                </button>
-              </div>
-            )}
-
-            {scanStatus === "looking_up" && (
-              <div className="bh-scan-box">
-                <div className="bh-scan-pulse" />
-                <div style={{ marginTop: 10, fontSize: 13, color: "#7A88A3" }}>書籍情報を検索中...</div>
-              </div>
-            )}
-
-            {scanStatus === "not_found" && (
-              <div className="bh-scan-box">
-                <div style={{ fontSize: 13, color: "#D98A8A", marginBottom: 10 }}>😢 見つかりませんでした。下のフォームに手入力してください</div>
-                <button className="bh-scan-btn" type="button" onClick={startCameraScan}>
-                  <ScanLine size={14} /> もう一度スキャン
-                </button>
-              </div>
-            )}
-
-            {scanStatus === "camera_error" && (
-              <div className="bh-scan-box">
-                <div style={{ fontSize: 13, color: "#D98A8A" }}>カメラを起動できませんでした。ブラウザのカメラ許可設定をご確認いただくか、下のフォームに手入力してください。</div>
-              </div>
-            )}
-
-            {scanStatus === "found" && scannedCoverUrl && (
-              <div style={{ textAlign: "center", marginBottom: 10 }}>
-                <img src={scannedCoverUrl} alt="表紙" style={{ height: 90, borderRadius: 8, boxShadow: "0 4px 10px rgba(0,0,0,0.15)" }} />
-              </div>
-            )}
-
-            {scannedBadge && <span className="bh-scanned-badge">📷 スキャンで自動入力されました</span>}
+            {scannedBadge && <span className="bh-scanned-badge">📷 自動入力されました（内容は下で編集できます）</span>}
 
             <form onSubmit={submitBook}>
               <div className="bh-field">
@@ -539,7 +748,7 @@ export default function BookShelfClient({
                 </div>
               </div>
               <button className="bh-submit-btn" type="submit" disabled={isPending}>
-                {isPending ? "登録中..." : "この内容で登録する"}
+                {isPending ? "保存中..." : editingBookId ? "この内容で保存する" : "この内容で登録する"}
               </button>
             </form>
           </div>
@@ -577,6 +786,9 @@ export default function BookShelfClient({
               <button className={`bh-icon-btn ${selectedBook.favorite ? "on" : ""}`} onClick={() => handleToggleFavorite(selectedBook)}>
                 <Heart size={18} fill={selectedBook.favorite ? "#FF8FA0" : "none"} />
               </button>
+              <button className="bh-icon-btn" onClick={() => { setSelectedId(null); openEditModal(selectedBook); }}>
+                <PencilLine size={16} />
+              </button>
             </div>
 
             <div className="bh-stars">
@@ -587,20 +799,104 @@ export default function BookShelfClient({
               ))}
             </div>
 
-            <div className="bh-read-section">
+            <div className="bh-read-section" style={{ textAlign: "center" }}>
               <div style={{ fontSize: 12, color: "#7A88A3", fontWeight: 700 }}>よんだ回数</div>
               <div className="bh-read-count">{selectedBook.read_count} 回</div>
-              <div style={{ display: "flex", gap: 6, justifyContent: "center", alignItems: "center", marginTop: 8 }}>
+
+              <div className="bh-read-type-row">
+                <button
+                  type="button"
+                  className={`bh-type-btn ${readingType === "self_read" ? "active" : ""}`}
+                  onClick={() => setReadingType("self_read")}
+                >
+                  📗 一人読み
+                </button>
+                <button
+                  type="button"
+                  className={`bh-type-btn ${readingType === "read_aloud" ? "active" : ""}`}
+                  onClick={() => setReadingType("read_aloud")}
+                >
+                  📖 読み聞かせ
+                </button>
+              </div>
+
+              <div className="bh-read-row">
+                <input
+                  type="date"
+                  className="bh-read-date-input"
+                  value={readDate}
+                  max={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setReadDate(e.target.value)}
+                />
                 <input
                   type="number"
                   min="0"
                   placeholder="分（任意）"
                   value={readMinutes}
                   onChange={(e) => setReadMinutes(e.target.value)}
-                  style={{ width: 90, border: "2px solid #E3ECF3", borderRadius: 10, padding: "6px 10px", fontFamily: "inherit", fontSize: 13, outline: "none" }}
+                  style={{ width: 80, border: "2px solid #E3ECF3", borderRadius: 10, padding: "6px 10px", fontFamily: "inherit", fontSize: 12, outline: "none" }}
                 />
-                <button className="bh-read-btn" style={{ marginTop: 0 }} onClick={() => handleAddRead(selectedBook)}>きょう読んだ！ +1</button>
               </div>
+
+              <div className="bh-readers-row">
+                {readersList.map((name) => (
+                  <span className="bh-reader-chip" key={name}>
+                    {name}
+                    <button type="button" onClick={() => removeReaderChip(name)}><X size={10} /></button>
+                  </span>
+                ))}
+                <input
+                  className="bh-reader-input"
+                  placeholder="読んだ人を追加"
+                  value={readerInput}
+                  onChange={(e) => setReaderInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      addReaderChip();
+                    }
+                  }}
+                  onBlur={addReaderChip}
+                />
+              </div>
+
+              <label className="bh-completed-row">
+                <input
+                  type="checkbox"
+                  checked={readCompleted}
+                  onChange={(e) => setReadCompleted(e.target.checked)}
+                />
+                さいごまで読んだ（読了）
+              </label>
+
+              <button className="bh-read-btn" style={{ marginTop: 12 }} onClick={() => handleAddRead(selectedBook)}>
+                この内容で記録する +1
+              </button>
+            </div>
+
+            <div className="bh-comments-title">読書記録</div>
+            <div className="bh-log-history">
+              {readingLogs.filter((l) => l.book_id === selectedBook.id).length === 0 ? (
+                <div style={{ fontSize: 12, color: "#B0BBCC", marginBottom: 8 }}>まだ記録がありません</div>
+              ) : (
+                readingLogs
+                  .filter((l) => l.book_id === selectedBook.id)
+                  .sort((a, b) => b.read_at.localeCompare(a.read_at))
+                  .slice(0, 8)
+                  .map((log) => (
+                    <div className="bh-log-item" key={log.id}>
+                      <span className="bh-log-date">{log.read_at.slice(0, 10)}</span>
+                      <span className="bh-log-badge">
+                        {log.reading_type === "read_aloud" ? "📖 読み聞かせ" : "📗 一人読み"}
+                      </span>
+                      {log.minutes ? <span className="bh-log-badge">{log.minutes}分</span> : null}
+                      {!log.completed && <span className="bh-log-badge">途中</span>}
+                      {log.readers && log.readers.length > 0 && (
+                        <span className="bh-log-readers">{log.readers.join("・")}</span>
+                      )}
+                    </div>
+                  ))
+              )}
             </div>
 
             <div className="bh-comments-title">おもいで・コメント</div>

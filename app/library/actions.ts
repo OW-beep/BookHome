@@ -44,7 +44,13 @@ export async function addBook(input: NewBookInput) {
 export async function logRead(
   bookId: string,
   currentReadCount: number,
-  minutes: number | null
+  input: {
+    minutes: number | null;
+    read_at: string;
+    reading_type: "self_read" | "read_aloud";
+    readers: string[];
+    completed: boolean;
+  }
 ) {
   const supabase = await createClient();
   const {
@@ -55,7 +61,11 @@ export async function logRead(
   const { error: logError } = await supabase.from("reading_logs").insert({
     book_id: bookId,
     user_id: user.id,
-    minutes,
+    minutes: input.minutes,
+    read_at: input.read_at,
+    reading_type: input.reading_type,
+    readers: input.readers.length > 0 ? input.readers : null,
+    completed: input.completed,
   });
   if (logError) throw new Error(logError.message);
 
@@ -65,6 +75,28 @@ export async function logRead(
     .eq("id", bookId);
   if (updateError) throw new Error(updateError.message);
 
+  revalidatePath("/library");
+}
+
+export async function updateBookDetails(
+  id: string,
+  input: NewBookInput
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("books")
+    .update({
+      title: input.title,
+      author: input.author || null,
+      genre: input.genre,
+      cover_color: input.cover_color,
+      cover_emoji: input.cover_emoji,
+      publisher: input.publisher || null,
+      list_price: input.list_price ?? null,
+      purchase_price: input.purchase_price ?? null,
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath("/library");
 }
 

@@ -25,14 +25,14 @@ export default function StatsModal({
     const totalBooks = books.length;
 
     const pricedBooks = books.filter(
-      (b) => b.purchase_price !== null && b.purchase_price !== undefined
+      (b) => b.list_price !== null && b.list_price !== undefined
     );
-    const totalPurchase = pricedBooks.reduce(
-      (s, b) => s + (b.purchase_price ?? 0),
+    const totalListPrice = pricedBooks.reduce(
+      (s, b) => s + (b.list_price ?? 0),
       0
     );
-    const avgPurchase =
-      pricedBooks.length > 0 ? totalPurchase / pricedBooks.length : 0;
+    const avgListPrice =
+      pricedBooks.length > 0 ? totalListPrice / pricedBooks.length : 0;
 
     const readThisMonth = readingLogs.filter((l) => {
       const d = new Date(l.read_at);
@@ -49,7 +49,10 @@ export default function StatsModal({
       0
     );
 
-    const readBooks = books.filter((b) => b.read_count > 0).length;
+    const completedBookIds = new Set(
+      readingLogs.filter((l) => l.completed).map((l) => l.book_id)
+    );
+    const readBooks = books.filter((b) => completedBookIds.has(b.id)).length;
     const completionRate =
       totalBooks > 0 ? Math.round((readBooks / totalBooks) * 100) : 0;
 
@@ -91,8 +94,8 @@ export default function StatsModal({
 
     return {
       totalBooks,
-      totalPurchase,
-      avgPurchase,
+      totalListPrice,
+      avgListPrice,
       readThisMonth,
       readThisYear,
       totalMinutes,
@@ -148,12 +151,12 @@ export default function StatsModal({
             <div className="stats-value">{stats.completionRate}%</div>
           </div>
           <div className="stats-card">
-            <div className="stats-label">購入総額</div>
-            <div className="stats-value">{yen(stats.totalPurchase)}</div>
+            <div className="stats-label">定価の合計</div>
+            <div className="stats-value">{yen(stats.totalListPrice)}</div>
           </div>
           <div className="stats-card">
-            <div className="stats-label">平均購入価格</div>
-            <div className="stats-value">{yen(stats.avgPurchase)}</div>
+            <div className="stats-label">平均定価</div>
+            <div className="stats-value">{yen(stats.avgListPrice)}</div>
           </div>
           <div className="stats-card">
             <div className="stats-label">今月よんだ回数</div>
