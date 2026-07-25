@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "ブックホーム",
   description: "家族みんなでも、こども専用でも。家族の本棚を育てよう。",
+  verification: {
+    google: "KYZp6leIoJkmXQipodIUtUhXTopgEfgqFiQ7eJZuRZA",
+  },
 };
 
 export default function RootLayout({
