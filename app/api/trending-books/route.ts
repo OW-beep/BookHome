@@ -1,9 +1,32 @@
 import { NextResponse } from "next/server";
+import https from "https";
 
 export const dynamic = "force-dynamic";
 
 // 絵本・児童書・図鑑ジャンルの楽天ブックスジャンルID
 const CHILDRENS_BOOKS_GENRE_ID = "001003";
+
+// Node.jsのfetch()はWHATWG仕様に従い、Referer/OriginヘッダーをセットしてもExampleとして
+// 黙って無視してしまう（禁止ヘッダーとして扱われるため）。楽天の新APIはReferer必須なので、
+// 低レベルのhttpsモジュールを使って迂回する。
+function httpsGetJson(
+  url: string,
+  headers: Record<string, string>
+): Promise<{ status: number; body: string }> {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, { headers }, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () =>
+        resolve({ status: res.statusCode || 0, body: data })
+      );
+    });
+    req.on("error", reject);
+    req.setTimeout(8000, () => {
+      req.destroy(new Error("timeout"));
+    });
+  });
+}
 
 export async function GET() {
   const appId = process.env.RAKUTEN_APP_ID;
@@ -20,31 +43,36 @@ export async function GET() {
     });
   }
 
+  if (!siteUrl) {
+    return NextResponse.json({
+      books: [],
+      source: "fallback",
+      reason:
+        "NEXT_PUBLIC_SITE_URL が未設定です。楽天の新APIはRefererヘッダーが必須のため、この値が必要です",
+    });
+  }
+
   try {
     const affiliateId = process.env.NEXT_PUBLIC_RAKUTEN_AFFILIATE_ID;
     const params = new URLSearchParams({
       applicationId: appId,
+      accessKey,
       booksGenreId: CHILDRENS_BOOKS_GENRE_ID,
       hits: "8",
       format: "json",
     });
     if (affiliateId) params.set("affiliateId", affiliateId);
 
-    const res = await fetch(
-      `https://openapi.rakuten.co.jp/services/api/BooksBook/Search/20170404?${params.toString()}`,
-      {
-        cache: "no-store",
-        headers: {
-          accessKey,
-          Origin: siteUrl || "",
-          Referer: siteUrl || "",
-        },
-      }
-    );
+    const url = `https://openapi.rakuten.co.jp/services/api/BooksBook/Search/20170404?${params.toString()}`;
 
-    if (!res.ok) {
-      const bodyText = await res.text();
-      const sanitized = bodyText
+    const { status, body } = await httpsGetJson(url, {
+      accessKey,
+      Origin: siteUrl,
+      Referer: siteUrl,
+    });
+
+    if (status !== 200) {
+      const sanitized = body
         .split(appId)
         .join("[APP_ID]")
         .split(accessKey)
@@ -53,11 +81,11 @@ export async function GET() {
       return NextResponse.json({
         books: [],
         source: "fallback",
-        reason: `Rakuten APIエラー status=${res.status}: ${sanitized}`,
+        reason: `Rakuten APIエラー status=${status}: ${sanitized}`,
       });
     }
 
-    const data = await res.json();
+    const data = JSON.parse(body);
     const rawItems = Array.isArray(data?.Items) ? data.Items : [];
 
     const books = rawItems
