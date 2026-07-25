@@ -9,7 +9,11 @@ export async function GET() {
   const appId = process.env.RAKUTEN_APP_ID;
 
   if (!appId) {
-    return NextResponse.json({ books: [], source: "fallback" });
+    return NextResponse.json({
+      books: [],
+      source: "fallback",
+      reason: "RAKUTEN_APP_ID が読み込めていません（未設定 or 未反映）",
+    });
   }
 
   try {
@@ -30,7 +34,13 @@ export async function GET() {
     );
 
     if (!res.ok) {
-      return NextResponse.json({ books: [], source: "fallback" });
+      const bodyText = await res.text();
+      const sanitized = bodyText.split(appId).join("[APP_ID]").slice(0, 300);
+      return NextResponse.json({
+        books: [],
+        source: "fallback",
+        reason: `Rakuten APIエラー status=${res.status}: ${sanitized}`,
+      });
     }
 
     const data = await res.json();
@@ -50,7 +60,11 @@ export async function GET() {
       }));
 
     return NextResponse.json({ books, source: "rakuten" });
-  } catch {
-    return NextResponse.json({ books: [], source: "fallback" });
+  } catch (err: any) {
+    return NextResponse.json({
+      books: [],
+      source: "fallback",
+      reason: `例外: ${err?.message ?? "unknown"}`,
+    });
   }
 }
