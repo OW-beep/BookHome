@@ -1,22 +1,40 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { X, TrendingUp } from "lucide-react";
 import { Book, ReadingLog } from "@/lib/types";
+import { computeBadges, buildCalendarData, computeCurrentStreak } from "@/lib/gamification";
 
 function yen(n: number) {
   return `¥${Math.round(n).toLocaleString("ja-JP")}`;
 }
 
+function calendarColor(count: number) {
+  if (count === 0) return "#E3ECF3";
+  if (count === 1) return "#B9E3C6";
+  if (count <= 3) return "#7EC98C";
+  return "#3F9457";
+}
+
 export default function StatsModal({
   books,
   readingLogs,
+  annualGoal,
+  onSaveGoal,
   onClose,
 }: {
   books: Book[];
   readingLogs: ReadingLog[];
+  annualGoal: number | null;
+  onSaveGoal: (goal: number | null) => void;
   onClose: () => void;
 }) {
+  const [goalInput, setGoalInput] = useState(annualGoal != null ? String(annualGoal) : "");
+  const [editingGoal, setEditingGoal] = useState(annualGoal == null);
+
+  const badges = useMemo(() => computeBadges(books, readingLogs), [books, readingLogs]);
+  const calendarDays = useMemo(() => buildCalendarData(readingLogs), [readingLogs]);
+  const streak = useMemo(() => computeCurrentStreak(readingLogs), [readingLogs]);
   const stats = useMemo(() => {
     const now = new Date();
     const thisMonth = now.getMonth();
@@ -132,6 +150,23 @@ export default function StatsModal({
         .stats-rank-score { color: #7A88A3; font-size: 11px; }
         .stats-empty { font-size: 12px; color: #B0BBCC; }
         .stats-family-note { background: #FFF4E5; border-radius: 12px; padding: 10px 14px; font-size: 12px; color: #9A7B3F; margin-top: 6px; }
+        .stats-badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .stats-badge { text-align: center; background: #fff; border-radius: 12px; padding: 10px 6px; opacity: 0.4; }
+        .stats-badge.unlocked { opacity: 1; background: #FFFDF3; box-shadow: 0 2px 0 rgba(255,201,74,0.4); }
+        .stats-badge-emoji { font-size: 22px; }
+        .stats-badge-label { font-size: 10px; font-weight: 700; color: #33415C; margin-top: 4px; line-height: 1.3; }
+        .stats-badge-progress { font-size: 9px; color: #B0BBCC; margin-top: 2px; }
+        .stats-goal-card { background: #EAF4FB; border-radius: 14px; padding: 14px; }
+        .stats-goal-track { height: 14px; background: #E3ECF3; border-radius: 999px; overflow: hidden; margin-top: 8px; }
+        .stats-goal-fill { height: 100%; background: linear-gradient(90deg, #7EC98C, #7FB8E0); border-radius: 999px; transition: width 0.4s ease; }
+        .stats-goal-label { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #33415C; }
+        .stats-goal-edit { display: flex; gap: 6px; margin-top: 8px; }
+        .stats-goal-edit input { flex: 1; border: 2px solid #E3ECF3; border-radius: 10px; padding: 7px 10px; font-family: inherit; font-size: 13px; outline: none; }
+        .stats-goal-edit button { background: #33415C; color: #fff; border: none; border-radius: 10px; padding: 0 14px; font-weight: 700; cursor: pointer; }
+        .stats-goal-edit-link { background: none; border: none; color: #7A88A3; font-size: 11px; cursor: pointer; margin-top: 6px; text-decoration: underline; }
+        .stats-calendar { display: grid; grid-template-rows: repeat(7, 12px); grid-auto-flow: column; grid-auto-columns: 12px; gap: 3px; overflow-x: auto; padding: 2px; }
+        .stats-calendar-cell { width: 12px; height: 12px; border-radius: 3px; }
+        .stats-streak-line { font-size: 12px; color: #7A88A3; margin-top: 8px; }
       `}</style>
       <div className="stats-modal" onClick={(e) => e.stopPropagation()}>
         <button className="stats-close" onClick={onClose}>
@@ -141,6 +176,76 @@ export default function StatsModal({
           <TrendingUp size={18} color="#7EC98C" /> としょかんの統計
         </div>
 
+        <div className="stats-section-title" style={{ marginTop: 0 }}>実績バッジ</div>
+        <div className="stats-badge-grid">
+          {badges.map((b) => (
+            <div className={`stats-badge ${b.unlocked ? "unlocked" : ""}`} key={b.id}>
+              <div className="stats-badge-emoji">{b.emoji}</div>
+              <div className="stats-badge-label">{b.label}</div>
+              <div className="stats-badge-progress">{b.progressText}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="stats-section-title">年間目標</div>
+        <div className="stats-goal-card">
+          {editingGoal ? (
+            <div className="stats-goal-edit">
+              <input
+                type="number"
+                min="1"
+                placeholder="例：100"
+                value={goalInput}
+                onChange={(e) => setGoalInput(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const n = Number(goalInput);
+                  if (n > 0) {
+                    onSaveGoal(n);
+                    setEditingGoal(false);
+                  }
+                }}
+              >
+                設定
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="stats-goal-label">
+                <span>今年 {stats.readThisYear}冊</span>
+                <span>目標 {annualGoal}冊</span>
+              </div>
+              <div className="stats-goal-track">
+                <div
+                  className="stats-goal-fill"
+                  style={{
+                    width: `${Math.min(100, annualGoal ? (stats.readThisYear / annualGoal) * 100 : 0)}%`,
+                  }}
+                />
+              </div>
+              <button className="stats-goal-edit-link" onClick={() => setEditingGoal(true)}>
+                目標を変更する
+              </button>
+            </>
+          )}
+        </div>
+
+        <div className="stats-section-title">読書カレンダー（直近12週間）</div>
+        <div className="stats-calendar">
+          {calendarDays.map((d) => (
+            <div
+              key={d.date}
+              className="stats-calendar-cell"
+              style={{ background: calendarColor(d.count) }}
+              title={`${d.date}：${d.count}回`}
+            />
+          ))}
+        </div>
+        <div className="stats-streak-line">🔥 現在 {streak}日連続で記録中</div>
+
+        <div className="stats-section-title">蔵書・読書のふりかえり</div>
         <div className="stats-grid">
           <div className="stats-card">
             <div className="stats-label">蔵書数</div>

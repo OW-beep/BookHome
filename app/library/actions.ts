@@ -137,6 +137,20 @@ export async function addComment(bookId: string, text: string) {
   revalidatePath("/library");
 }
 
+export async function updateAnnualGoal(goal: number | null) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("ログインが必要です");
+
+  const { error } = await supabase
+    .from("user_settings")
+    .upsert({ user_id: user.id, annual_goal: goal, updated_at: new Date().toISOString() });
+  if (error) throw new Error(error.message);
+  revalidatePath("/library");
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

@@ -14,7 +14,7 @@ import {
   PencilLine,
   LogOut,
 } from "lucide-react";
-import { Book, ReadingLog, GENRES, COVER_COLORS, EMOJIS } from "@/lib/types";
+import { Book, ReadingLog, UserSettings, GENRES, COVER_COLORS, EMOJIS } from "@/lib/types";
 import {
   addBook,
   updateBook,
@@ -23,12 +23,15 @@ import {
   addComment,
   signOut,
   logRead,
+  updateAnnualGoal,
   NewBookInput,
 } from "@/app/library/actions";
 import StatsModal from "@/components/StatsModal";
 import RecommendedBooks from "@/components/RecommendedBooks";
+import ShareModal from "@/components/ShareModal";
 import { buildRakutenBookLink } from "@/lib/affiliate";
-import { BarChart3 } from "lucide-react";
+import { getLevelInfo } from "@/lib/gamification";
+import { BarChart3, Share2 } from "lucide-react";
 
 type ScanStatus =
   | "idle"
@@ -47,17 +50,21 @@ function chunk<T>(arr: T[], size: number): T[][] {
 export default function BookShelfClient({
   initialBooks,
   initialReadingLogs,
+  initialSettings,
   userEmail,
 }: {
   initialBooks: Book[];
   initialReadingLogs: ReadingLog[];
+  initialSettings: UserSettings;
   userEmail: string;
 }) {
   const [books, setBooks] = useState<Book[]>(initialBooks);
   const [readingLogs, setReadingLogs] =
     useState<ReadingLog[]>(initialReadingLogs);
+  const [settings, setSettings] = useState<UserSettings>(initialSettings);
   const [isPending, startTransition] = useTransition();
   const [showStats, setShowStats] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [readMinutes, setReadMinutes] = useState("");
   const [readDate, setReadDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [readingType, setReadingType] = useState<"self_read" | "read_aloud">("self_read");
@@ -102,8 +109,9 @@ export default function BookShelfClient({
   const totalBooks = books.length;
   const totalReads = books.reduce((s, b) => s + b.read_count, 0);
   const totalFavorites = books.filter((b) => b.favorite).length;
-  const level = Math.max(1, Math.floor(totalReads / 5) + 1);
-  const levelProgress = ((totalReads % 5) / 5) * 100;
+  const levelInfo = getLevelInfo(totalReads);
+  const level = levelInfo.level;
+  const levelProgress = levelInfo.progress * 100;
 
   const filtered = useMemo(() => {
     return books.filter((b) => {
@@ -500,13 +508,14 @@ export default function BookShelfClient({
         >
           <LogOut size={12} /> {userEmail} をログアウト
         </button>
-        <button
-          className="bh-signout"
-          style={{ left: 20, right: "auto" }}
-          onClick={() => setShowStats(true)}
-        >
-          <BarChart3 size={12} /> 統計
-        </button>
+        <div style={{ position: "absolute", top: 24, left: 20, display: "flex", gap: 6 }}>
+          <button className="bh-signout" style={{ position: "static" }} onClick={() => setShowStats(true)}>
+            <BarChart3 size={12} /> 統計
+          </button>
+          <button className="bh-signout" style={{ position: "static" }} onClick={() => setShowShare(true)}>
+            <Share2 size={12} /> シェア
+          </button>
+        </div>
         <div className="bh-logo-row">
           <svg width="32" height="32" viewBox="0 0 64 64" fill="none">
             <path d="M32 10L54 20V52C54 52 44 46 32 46C20 46 10 52 10 52V20L32 10Z" fill="#FFC94A" stroke="#33415C" strokeWidth="3" strokeLinejoin="round"/>
@@ -518,7 +527,7 @@ export default function BookShelfClient({
 
         <div className="bh-level-bar-wrap">
           <div className="bh-level-label">
-            <span>としょかん Lv.{level}</span>
+            <span>としょかん Lv.{level}（{levelInfo.title}）</span>
             <span>{totalReads} さつ よんだ</span>
           </div>
           <div className="bh-level-track">
@@ -948,10 +957,31 @@ export default function BookShelfClient({
           </div>
         </div>
       )}
+      {showShare && (
+        <ShareModal
+          monthCount={readingLogs.filter((l) => {
+            const d = new Date(l.read_at);
+            const now = new Date();
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+          }).length}
+          totalBooks={totalBooks}
+          level={level}
+          levelTitle={levelInfo.title}
+          onClose={() => setShowShare(false)}
+        />
+      )}
+
       {showStats && (
         <StatsModal
           books={books}
           readingLogs={readingLogs}
+          annualGoal={settings.annual_goal}
+          onSaveGoal={(goal) => {
+            setSettings({ annual_goal: goal });
+            startTransition(async () => {
+              await updateAnnualGoal(goal);
+            });
+          }}
           onClose={() => setShowStats(false)}
         />
       )}

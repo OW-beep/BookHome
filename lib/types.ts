@@ -58,6 +58,10 @@ export type Book = {
 
 export type ReadingType = "self_read" | "read_aloud";
 
+export type UserSettings = {
+  annual_goal: number | null;
+};
+
 export type ReadingLog = {
   id: string;
   book_id: string;
