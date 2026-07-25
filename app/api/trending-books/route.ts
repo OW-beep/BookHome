@@ -7,12 +7,16 @@ const CHILDRENS_BOOKS_GENRE_ID = "001003";
 
 export async function GET() {
   const appId = process.env.RAKUTEN_APP_ID;
+  const accessKey = process.env.RAKUTEN_ACCESS_KEY;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
-  if (!appId) {
+  if (!appId || !accessKey) {
     return NextResponse.json({
       books: [],
       source: "fallback",
-      reason: "RAKUTEN_APP_ID が読み込めていません（未設定 or 未反映）",
+      reason: !appId
+        ? "RAKUTEN_APP_ID が読み込めていません（未設定 or 未反映）"
+        : "RAKUTEN_ACCESS_KEY が読み込めていません（2026年5月の楽天API仕様変更で追加で必要になりました）",
     });
   }
 
@@ -20,6 +24,7 @@ export async function GET() {
     const affiliateId = process.env.NEXT_PUBLIC_RAKUTEN_AFFILIATE_ID;
     const params = new URLSearchParams({
       applicationId: appId,
+      accessKey,
       booksGenreId: CHILDRENS_BOOKS_GENRE_ID,
       sort: "sales",
       hits: "8",
@@ -29,13 +34,25 @@ export async function GET() {
     if (affiliateId) params.set("affiliateId", affiliateId);
 
     const res = await fetch(
-      `https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404?${params.toString()}`,
-      { cache: "no-store" }
+      `https://openapi.rakuten.co.jp/services/api/BooksBook/Search/20170404?${params.toString()}`,
+      {
+        cache: "no-store",
+        headers: {
+          accessKey,
+          Origin: siteUrl || "",
+          Referer: siteUrl || "",
+        },
+      }
     );
 
     if (!res.ok) {
       const bodyText = await res.text();
-      const sanitized = bodyText.split(appId).join("[APP_ID]").slice(0, 300);
+      const sanitized = bodyText
+        .split(appId)
+        .join("[APP_ID]")
+        .split(accessKey)
+        .join("[ACCESS_KEY]")
+        .slice(0, 300);
       return NextResponse.json({
         books: [],
         source: "fallback",
