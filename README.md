@@ -24,6 +24,14 @@ Next.js (App Router) + TypeScript + Tailwind CSS + Supabase（認証・DB）構�
 
 蔵書の金額系の統計（合計・平均）は**「定価」列だけ**を集計しています（「購入価格」列は今は集計に使っていません。本の情報としては引き続き保存されます）。定価が未入力の本は自動的に集計対象から除外されます。
 
+## サイトマップをSearch Consoleに登録する
+
+1. Vercelの Environment Variables に `NEXT_PUBLIC_SITE_URL`（あなたの本番URL、末尾スラッシュなし）を追加してRedeploy
+2. デプロイ後、`https://あなたのURL/sitemap.xml` にアクセスして中身が表示されることを確認
+3. Google Search Console → 左メニュー「サイトマップ」→ 新しいサイトマップの追加欄に `sitemap.xml` とだけ入力して送信
+
+`/library`（ログイン必須ページ）や `/api`、`/auth` はクロール対象から自動的に除外されます（`robots.txt`で制御）。
+
 ## 「今売れている本」ランキングを有効にする
 
 1. https://webservice.rakuten.co.jp/ にアクセスし、楽天IDでログイン
