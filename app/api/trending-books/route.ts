@@ -24,9 +24,7 @@ export async function GET() {
     const affiliateId = process.env.NEXT_PUBLIC_RAKUTEN_AFFILIATE_ID;
     const params = new URLSearchParams({
       applicationId: appId,
-      accessKey,
       booksGenreId: CHILDRENS_BOOKS_GENRE_ID,
-      sort: "sales",
       hits: "8",
       format: "json",
     });
