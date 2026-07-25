@@ -26,6 +26,7 @@ import {
   NewBookInput,
 } from "@/app/library/actions";
 import StatsModal from "@/components/StatsModal";
+import RecommendedBooks from "@/components/RecommendedBooks";
 import { buildRakutenBookLink } from "@/lib/affiliate";
 import { BarChart3 } from "lucide-react";
 
@@ -575,6 +576,8 @@ export default function BookShelfClient({
           ))
         )}
       </div>
+
+      <RecommendedBooks />
 
       <button className="bh-fab" onClick={openAddModal}>
         <Plus size={18} /> ほんをふやす
