@@ -29,7 +29,6 @@ export async function GET() {
       sort: "sales",
       hits: "8",
       format: "json",
-      formatVersion: "2",
     });
     if (affiliateId) params.set("affiliateId", affiliateId);
 
@@ -61,9 +60,10 @@ export async function GET() {
     }
 
     const data = await res.json();
-    const items = Array.isArray(data?.Items) ? data.Items : [];
+    const rawItems = Array.isArray(data?.Items) ? data.Items : [];
 
-    const books = items
+    const books = rawItems
+      .map((entry: any) => entry?.Item ?? entry)
       .filter((item: any) => item?.title)
       .slice(0, 8)
       .map((item: any) => ({
