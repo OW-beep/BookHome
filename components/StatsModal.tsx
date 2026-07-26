@@ -33,6 +33,7 @@ export default function StatsModal({
 }) {
   const [goalInput, setGoalInput] = useState(annualGoal != null ? String(annualGoal) : "");
   const [editingGoal, setEditingGoal] = useState(annualGoal == null);
+  const [tab, setTab] = useState<"stats" | "achievements">("stats");
 
   const badges = useMemo(() => computeBadges(books, readingLogs), [books, readingLogs]);
   const calendarDays = useMemo(() => buildCalendarData(readingLogs), [readingLogs]);
@@ -184,6 +185,9 @@ export default function StatsModal({
         .stats-calendar { display: grid; grid-template-rows: repeat(7, 12px); grid-auto-flow: column; grid-auto-columns: 12px; gap: 3px; overflow-x: auto; padding: 2px; }
         .stats-calendar-cell { width: 12px; height: 12px; border-radius: 3px; }
         .stats-streak-line { font-size: 12px; color: #7A88A3; margin-top: 8px; }
+        .stats-tabbar { display: flex; gap: 6px; margin-bottom: 18px; background: #EAF4FB; padding: 4px; border-radius: 14px; }
+        .stats-tab { flex: 1; border: none; background: transparent; padding: 9px 8px; border-radius: 10px; font-family: inherit; font-weight: 700; font-size: 13px; color: #7A88A3; cursor: pointer; }
+        .stats-tab.active { background: #fff; color: #33415C; box-shadow: 0 2px 0 rgba(51,65,92,0.08); }
       `}</style>
       <div className="stats-modal" onClick={(e) => e.stopPropagation()}>
         <button className="stats-close" onClick={onClose}>
@@ -193,175 +197,191 @@ export default function StatsModal({
           <TrendingUp size={18} color="#7EC98C" /> としょかんの統計
         </div>
 
-        <div className="stats-section-title" style={{ marginTop: 0 }}>実績バッジ</div>
-        <div className="stats-badge-grid">
-          {badges.map((b) => (
-            <div className={`stats-badge ${b.unlocked ? "unlocked" : ""}`} key={b.id}>
-              <div className="stats-badge-emoji">{b.emoji}</div>
-              <div className="stats-badge-label">{b.label}</div>
-              <div className="stats-badge-progress">{b.progressText}</div>
-            </div>
-          ))}
+        <div className="stats-tabbar">
+          <button type="button" className={`stats-tab ${tab === "stats" ? "active" : ""}`} onClick={() => setTab("stats")}>
+            📊 統計
+          </button>
+          <button type="button" className={`stats-tab ${tab === "achievements" ? "active" : ""}`} onClick={() => setTab("achievements")}>
+            🏆 実績・目標
+          </button>
         </div>
 
-        <div className="stats-section-title">年間目標</div>
-        <div className="stats-goal-card">
-          {editingGoal ? (
-            <div className="stats-goal-edit">
-              <input
-                type="number"
-                min="1"
-                placeholder="例：100"
-                value={goalInput}
-                onChange={(e) => setGoalInput(e.target.value)}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const n = Number(goalInput);
-                  if (n > 0) {
-                    onSaveGoal(n);
-                    setEditingGoal(false);
-                  }
-                }}
-              >
-                設定
-              </button>
+        {tab === "achievements" && (
+          <>
+            <div className="stats-section-title" style={{ marginTop: 0 }}>実績バッジ</div>
+            <div className="stats-badge-grid">
+              {badges.map((b) => (
+                <div className={`stats-badge ${b.unlocked ? "unlocked" : ""}`} key={b.id}>
+                  <div className="stats-badge-emoji">{b.emoji}</div>
+                  <div className="stats-badge-label">{b.label}</div>
+                  <div className="stats-badge-progress">{b.progressText}</div>
+                </div>
+              ))}
             </div>
-          ) : (
-            <>
-              <div className="stats-goal-label">
-                <span>今年 {stats.readThisYear}冊</span>
-                <span>目標 {annualGoal}冊</span>
-              </div>
-              <div className="stats-goal-track">
+
+            <div className="stats-section-title">年間目標</div>
+            <div className="stats-goal-card">
+              {editingGoal ? (
+                <div className="stats-goal-edit">
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="例：100"
+                    value={goalInput}
+                    onChange={(e) => setGoalInput(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const n = Number(goalInput);
+                      if (n > 0) {
+                        onSaveGoal(n);
+                        setEditingGoal(false);
+                      }
+                    }}
+                  >
+                    設定
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="stats-goal-label">
+                    <span>今年 {stats.readThisYear}冊</span>
+                    <span>目標 {annualGoal}冊</span>
+                  </div>
+                  <div className="stats-goal-track">
+                    <div
+                      className="stats-goal-fill"
+                      style={{
+                        width: `${Math.min(100, annualGoal ? (stats.readThisYear / annualGoal) * 100 : 0)}%`,
+                      }}
+                    />
+                  </div>
+                  <button className="stats-goal-edit-link" onClick={() => setEditingGoal(true)}>
+                    目標を変更する
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div className="stats-section-title">読書カレンダー（直近12週間）</div>
+            <div className="stats-calendar">
+              {calendarDays.map((d) => (
                 <div
-                  className="stats-goal-fill"
-                  style={{
-                    width: `${Math.min(100, annualGoal ? (stats.readThisYear / annualGoal) * 100 : 0)}%`,
-                  }}
+                  key={d.date}
+                  className="stats-calendar-cell"
+                  style={{ background: calendarColor(d.count) }}
+                  title={`${d.date}：${d.count}回`}
                 />
-              </div>
-              <button className="stats-goal-edit-link" onClick={() => setEditingGoal(true)}>
-                目標を変更する
-              </button>
-            </>
-          )}
-        </div>
-
-        <div className="stats-section-title">読書カレンダー（直近12週間）</div>
-        <div className="stats-calendar">
-          {calendarDays.map((d) => (
-            <div
-              key={d.date}
-              className="stats-calendar-cell"
-              style={{ background: calendarColor(d.count) }}
-              title={`${d.date}：${d.count}回`}
-            />
-          ))}
-        </div>
-        <div className="stats-streak-line">🔥 現在 {streak}日連続で記録中</div>
-
-        <div className="stats-section-title">蔵書・読書のふりかえり</div>
-        <div className="stats-grid">
-          <div className="stats-card">
-            <div className="stats-label">蔵書数</div>
-            <div className="stats-value">{stats.totalBooks} さつ</div>
-          </div>
-          <div className="stats-card">
-            <div className="stats-label">読了率</div>
-            <div className="stats-value">{stats.completionRate}%</div>
-          </div>
-          <div className="stats-card">
-            <div className="stats-label">定価の合計</div>
-            <div className="stats-value">{yen(stats.totalListPrice)}</div>
-          </div>
-          <div className="stats-card">
-            <div className="stats-label">平均定価</div>
-            <div className="stats-value">{yen(stats.avgListPrice)}</div>
-          </div>
-          <div className="stats-card">
-            <div className="stats-label">今月よんだ回数</div>
-            <div className="stats-value">{stats.readThisMonth} 回</div>
-          </div>
-          <div className="stats-card">
-            <div className="stats-label">今年よんだ回数</div>
-            <div className="stats-value">{stats.readThisYear} 回</div>
-          </div>
-          <div className="stats-card" style={{ gridColumn: "span 2" }}>
-            <div className="stats-label">合計読書時間（記録した回のみ）</div>
-            <div className="stats-value">
-              {hours > 0 ? `${hours}時間` : ""}
-              {mins}分
+              ))}
             </div>
-          </div>
-        </div>
+            <div className="stats-streak-line">🔥 現在 {streak}日連続で記録中</div>
 
-        <div className="stats-section-title">ジャンル割合</div>
-        {stats.genreBreakdown.length === 0 ? (
-          <div className="stats-empty">まだ本がありません</div>
-        ) : (
-          stats.genreBreakdown.map((g) => (
-            <div className="stats-genre-row" key={g.genre}>
-              <div className="stats-genre-name">{g.genre}</div>
-              <div className="stats-genre-track">
-                <div
-                  className="stats-genre-fill"
-                  style={{ width: `${g.pct}%` }}
-                />
+            <div className="stats-section-title">家族ランキング</div>
+            {familyMembers.length === 0 ? (
+              <div className="stats-family-note">
+                「👪 家族」ボタンから家族メンバーを登録すると、読んだ回数のランキングがここに表示されます。
               </div>
-              <div className="stats-genre-pct">{g.pct}%</div>
+            ) : (
+              <div className="stats-rank-list">
+                {familyRanking.map(({ member, count }, i) => (
+                  <div className="stats-rank-item" key={member.id}>
+                    <span className="stats-rank-name">
+                      {i === 0 && count > 0 ? "🥇 " : i === 1 && count > 0 ? "🥈 " : i === 2 && count > 0 ? "🥉 " : ""}
+                      {member.emoji} {member.name}
+                    </span>
+                    <span className="stats-rank-score">{count}回よんだ</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {tab === "stats" && (
+          <>
+            <div className="stats-grid" style={{ marginTop: 0 }}>
+              <div className="stats-card">
+                <div className="stats-label">蔵書数</div>
+                <div className="stats-value">{stats.totalBooks} さつ</div>
+              </div>
+              <div className="stats-card">
+                <div className="stats-label">読了率</div>
+                <div className="stats-value">{stats.completionRate}%</div>
+              </div>
+              <div className="stats-card">
+                <div className="stats-label">定価の合計</div>
+                <div className="stats-value">{yen(stats.totalListPrice)}</div>
+              </div>
+              <div className="stats-card">
+                <div className="stats-label">平均定価</div>
+                <div className="stats-value">{yen(stats.avgListPrice)}</div>
+              </div>
+              <div className="stats-card">
+                <div className="stats-label">今月よんだ回数</div>
+                <div className="stats-value">{stats.readThisMonth} 回</div>
+              </div>
+              <div className="stats-card">
+                <div className="stats-label">今年よんだ回数</div>
+                <div className="stats-value">{stats.readThisYear} 回</div>
+              </div>
+              <div className="stats-card" style={{ gridColumn: "span 2" }}>
+                <div className="stats-label">合計読書時間（記録した回のみ）</div>
+                <div className="stats-value">
+                  {hours > 0 ? `${hours}時間` : ""}
+                  {mins}分
+                </div>
+              </div>
             </div>
-          ))
-        )}
 
-        <div className="stats-section-title">人気作者（よく読まれている順）</div>
-        {stats.topAuthors.length === 0 ? (
-          <div className="stats-empty">データがまだありません</div>
-        ) : (
-          <div className="stats-rank-list">
-            {stats.topAuthors.map(([author, score]) => (
-              <div className="stats-rank-item" key={author}>
-                <span className="stats-rank-name">{author}</span>
-                <span className="stats-rank-score">{score}回よまれた</span>
-              </div>
-            ))}
-          </div>
-        )}
+            <div className="stats-section-title">ジャンル割合</div>
+            {stats.genreBreakdown.length === 0 ? (
+              <div className="stats-empty">まだ本がありません</div>
+            ) : (
+              stats.genreBreakdown.map((g) => (
+                <div className="stats-genre-row" key={g.genre}>
+                  <div className="stats-genre-name">{g.genre}</div>
+                  <div className="stats-genre-track">
+                    <div
+                      className="stats-genre-fill"
+                      style={{ width: `${g.pct}%` }}
+                    />
+                  </div>
+                  <div className="stats-genre-pct">{g.pct}%</div>
+                </div>
+              ))
+            )}
 
-        <div className="stats-section-title">人気出版社</div>
-        {stats.topPublishers.length === 0 ? (
-          <div className="stats-empty">
-            出版社が登録された本がまだありません
-          </div>
-        ) : (
-          <div className="stats-rank-list">
-            {stats.topPublishers.map(([publisher, score]) => (
-              <div className="stats-rank-item" key={publisher}>
-                <span className="stats-rank-name">{publisher}</span>
-                <span className="stats-rank-score">{score}回よまれた</span>
+            <div className="stats-section-title">人気作者（よく読まれている順）</div>
+            {stats.topAuthors.length === 0 ? (
+              <div className="stats-empty">データがまだありません</div>
+            ) : (
+              <div className="stats-rank-list">
+                {stats.topAuthors.map(([author, score]) => (
+                  <div className="stats-rank-item" key={author}>
+                    <span className="stats-rank-name">{author}</span>
+                    <span className="stats-rank-score">{score}回よまれた</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            )}
 
-        <div className="stats-section-title">家族ランキング</div>
-        {familyMembers.length === 0 ? (
-          <div className="stats-family-note">
-            「👪 家族」ボタンから家族メンバーを登録すると、読んだ回数のランキングがここに表示されます。
-          </div>
-        ) : (
-          <div className="stats-rank-list">
-            {familyRanking.map(({ member, count }, i) => (
-              <div className="stats-rank-item" key={member.id}>
-                <span className="stats-rank-name">
-                  {i === 0 && count > 0 ? "🥇 " : i === 1 && count > 0 ? "🥈 " : i === 2 && count > 0 ? "🥉 " : ""}
-                  {member.emoji} {member.name}
-                </span>
-                <span className="stats-rank-score">{count}回よんだ</span>
+            <div className="stats-section-title">人気出版社</div>
+            {stats.topPublishers.length === 0 ? (
+              <div className="stats-empty">
+                出版社が登録された本がまだありません
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="stats-rank-list">
+                {stats.topPublishers.map(([publisher, score]) => (
+                  <div className="stats-rank-item" key={publisher}>
+                    <span className="stats-rank-name">{publisher}</span>
+                    <span className="stats-rank-score">{score}回よまれた</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

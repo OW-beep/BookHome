@@ -1,3 +1,121 @@
+export type BookShareParams = {
+  familyName: string;
+  title: string;
+  author: string | null;
+  genre: string;
+  rating: number;
+  coverColor: string;
+  coverEmoji: string;
+  comment: string | null;
+};
+
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number
+): number {
+  const chars = text.split("");
+  let line = "";
+  let curY = y;
+  for (let i = 0; i < chars.length; i++) {
+    const testLine = line + chars[i];
+    if (ctx.measureText(testLine).width > maxWidth && line !== "") {
+      ctx.fillText(line, x, curY);
+      line = chars[i];
+      curY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, curY);
+  return curY + lineHeight;
+}
+
+export function generateBookShareImage(params: BookShareParams): string {
+  const canvas = document.createElement("canvas");
+  const size = 600;
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, size);
+  bgGrad.addColorStop(0, "#EAF4FB");
+  bgGrad.addColorStop(1, "#F3F8FC");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, size, size);
+
+  ctx.save();
+  ctx.shadowColor = "rgba(51,65,92,0.15)";
+  ctx.shadowBlur = 24;
+  ctx.shadowOffsetY = 8;
+  ctx.fillStyle = "#FFFBF3";
+  roundedRect(ctx, 40, 50, size - 80, size - 140, 32);
+  ctx.fill();
+  ctx.restore();
+
+  const centerX = size / 2;
+
+  // ヘッダー
+  ctx.font = "bold 16px 'Hiragino Maru Gothic ProN', 'Yu Gothic', sans-serif";
+  ctx.fillStyle = "#7A88A3";
+  ctx.textAlign = "center";
+  ctx.fillText(
+    `${params.familyName ? params.familyName + "が" : ""}読んだ本 📚`,
+    centerX,
+    100
+  );
+
+  // 表紙（色＋絵文字の円）
+  ctx.fillStyle = params.coverColor;
+  ctx.beginPath();
+  ctx.arc(centerX, 210, 80, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.font = "72px sans-serif";
+  ctx.fillText(params.coverEmoji, centerX, 236);
+
+  // タイトル
+  ctx.font = "bold 28px 'Hiragino Maru Gothic ProN', 'Yu Gothic', sans-serif";
+  ctx.fillStyle = "#33415C";
+  const titleY = wrapText(ctx, params.title, centerX, 340, size - 140, 36);
+
+  // 著者
+  if (params.author) {
+    ctx.font = "16px 'Hiragino Maru Gothic ProN', 'Yu Gothic', sans-serif";
+    ctx.fillStyle = "#7A88A3";
+    ctx.fillText(params.author, centerX, titleY + 6);
+  }
+
+  // 星評価
+  const starsY = titleY + 50;
+  const stars =
+    "★".repeat(Math.max(0, params.rating)) +
+    "☆".repeat(Math.max(0, 5 - params.rating));
+  ctx.font = "28px sans-serif";
+  ctx.fillStyle = "#FFC94A";
+  ctx.fillText(stars, centerX, starsY);
+
+  // コメント
+  if (params.comment) {
+    ctx.font = "15px 'Hiragino Maru Gothic ProN', 'Yu Gothic', sans-serif";
+    ctx.fillStyle = "#33415C";
+    const trimmed =
+      params.comment.length > 40
+        ? params.comment.slice(0, 40) + "…"
+        : params.comment;
+    wrapText(ctx, `「${trimmed}」`, centerX, starsY + 40, size - 140, 22);
+  }
+
+  // フッター
+  ctx.font = "bold 14px 'Hiragino Maru Gothic ProN', 'Yu Gothic', sans-serif";
+  ctx.fillStyle = "#B0BBCC";
+  ctx.fillText("📚🏠 ブックホーム", centerX, size - 70);
+
+  return canvas.toDataURL("image/png");
+}
+
 export type ShareImageParams = {
   familyName: string;
   monthCount: number;

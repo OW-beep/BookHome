@@ -2,19 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { X, Download, Share2 } from "lucide-react";
-import { generateShareImage } from "@/lib/shareImage";
 
 export default function ShareModal({
-  monthCount,
-  totalBooks,
-  level,
-  levelTitle,
+  heading,
+  showNameInput = true,
+  buildShareText,
+  buildImage,
   onClose,
 }: {
-  monthCount: number;
-  totalBooks: number;
-  level: number;
-  levelTitle: string;
+  heading: string;
+  showNameInput?: boolean;
+  buildShareText: (familyName: string) => string;
+  buildImage: (familyName: string) => string;
   onClose: () => void;
 }) {
   const [familyName, setFamilyName] = useState("");
@@ -28,14 +27,7 @@ export default function ShareModal({
   }, []);
 
   function regenerate() {
-    const url = generateShareImage({
-      familyName: familyName.trim(),
-      monthCount,
-      totalBooks,
-      level,
-      levelTitle,
-    });
-    setImageUrl(url);
+    setImageUrl(buildImage(familyName.trim()));
   }
 
   useEffect(() => {
@@ -43,7 +35,7 @@ export default function ShareModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const shareText = `${familyName ? familyName + "の" : ""}今月${monthCount}冊読みました📚 #ブックホーム`;
+  const shareText = buildShareText(familyName.trim());
 
   function shareToX() {
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
@@ -102,17 +94,19 @@ export default function ShareModal({
       `}</style>
       <div className="share-modal" onClick={(e) => e.stopPropagation()}>
         <button className="share-close" onClick={onClose}><X size={16} /></button>
-        <div className="share-title">📤 実績をシェアする</div>
+        <div className="share-title">📤 {heading}</div>
 
-        <div className="share-field">
-          <label>表示する名前（任意・例：田中家）</label>
-          <input
-            placeholder="未入力の場合は表示されません"
-            value={familyName}
-            onChange={(e) => setFamilyName(e.target.value)}
-            onBlur={regenerate}
-          />
-        </div>
+        {showNameInput && (
+          <div className="share-field">
+            <label>表示する名前（任意・例：田中家）</label>
+            <input
+              placeholder="未入力の場合は表示されません"
+              value={familyName}
+              onChange={(e) => setFamilyName(e.target.value)}
+              onBlur={regenerate}
+            />
+          </div>
+        )}
 
         {imageUrl && <img className="share-preview" src={imageUrl} alt="シェア画像プレビュー" />}
 

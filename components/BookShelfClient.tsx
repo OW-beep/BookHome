@@ -34,6 +34,7 @@ import ShareModal from "@/components/ShareModal";
 import FamilyModal from "@/components/FamilyModal";
 import { buildRakutenBookLink } from "@/lib/affiliate";
 import { getLevelInfo } from "@/lib/gamification";
+import { generateShareImage, generateBookShareImage } from "@/lib/shareImage";
 import { BarChart3, Share2, Users } from "lucide-react";
 
 type ScanStatus =
@@ -71,6 +72,7 @@ export default function BookShelfClient({
   const [isPending, startTransition] = useTransition();
   const [showStats, setShowStats] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [shareBookId, setShareBookId] = useState<string | null>(null);
   const [showFamily, setShowFamily] = useState(false);
   const [readMinutes, setReadMinutes] = useState("");
   const [readDate, setReadDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -834,6 +836,9 @@ export default function BookShelfClient({
               <button className="bh-icon-btn" onClick={() => { setSelectedId(null); openEditModal(selectedBook); }}>
                 <PencilLine size={16} />
               </button>
+              <button className="bh-icon-btn" onClick={() => { setSelectedId(null); setShareBookId(selectedBook.id); }}>
+                <Share2 size={16} />
+              </button>
             </div>
 
             <div className="bh-stars">
@@ -1021,17 +1026,59 @@ export default function BookShelfClient({
 
       {showShare && (
         <ShareModal
-          monthCount={readingLogs.filter((l) => {
-            const d = new Date(l.read_at);
-            const now = new Date();
-            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-          }).length}
-          totalBooks={totalBooks}
-          level={level}
-          levelTitle={levelInfo.title}
+          heading="実績をシェアする"
+          buildShareText={(familyName) => {
+            const monthCount = readingLogs.filter((l) => {
+              const d = new Date(l.read_at);
+              const now = new Date();
+              return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            }).length;
+            return `${familyName ? familyName + "の" : ""}今月${monthCount}冊読みました📚 #ブックホーム`;
+          }}
+          buildImage={(familyName) => {
+            const monthCount = readingLogs.filter((l) => {
+              const d = new Date(l.read_at);
+              const now = new Date();
+              return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            }).length;
+            return generateShareImage({
+              familyName,
+              monthCount,
+              totalBooks,
+              level,
+              levelTitle: levelInfo.title,
+            });
+          }}
           onClose={() => setShowShare(false)}
         />
       )}
+
+      {shareBookId && (() => {
+        const book = books.find((b) => b.id === shareBookId);
+        if (!book) return null;
+        const latestComment = book.book_comments[book.book_comments.length - 1]?.text ?? null;
+        return (
+          <ShareModal
+            heading="この本をシェアする"
+            buildShareText={(familyName) =>
+              `${familyName ? familyName + "が" : ""}「${book.title}」を読みました📚 #ブックホーム`
+            }
+            buildImage={(familyName) =>
+              generateBookShareImage({
+                familyName,
+                title: book.title,
+                author: book.author,
+                genre: book.genre,
+                rating: book.rating,
+                coverColor: book.cover_color,
+                coverEmoji: book.cover_emoji,
+                comment: latestComment,
+              })
+            }
+            onClose={() => setShareBookId(null)}
+          />
+        );
+      })()}
 
       {showStats && (
         <StatsModal
