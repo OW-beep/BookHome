@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { pickRandomRecommendations } from "@/lib/recommendations";
+import { useEffect, useMemo, useState } from "react";
+import { pickRandomRecommendations, pickByAgeBand } from "@/lib/recommendations";
 import { buildRakutenBookLink } from "@/lib/affiliate";
 
 type TrendingBook = {
@@ -12,9 +12,18 @@ type TrendingBook = {
   isbn: string | null;
 };
 
+const AGE_BANDS = [
+  { key: "all", label: "すべて" },
+  { key: "0-2", label: "0〜2歳" },
+  { key: "3-5", label: "3〜5歳" },
+  { key: "6-8", label: "6〜8歳" },
+  { key: "9-12", label: "9〜12歳" },
+] as const;
+
 export default function RecommendedBooks() {
   const [trending, setTrending] = useState<TrendingBook[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ageFilter, setAgeFilter] = useState<typeof AGE_BANDS[number]["key"]>("all");
   const [fallbackBooks] = useState(() => pickRandomRecommendations(4));
 
   useEffect(() => {
@@ -40,13 +49,21 @@ export default function RecommendedBooks() {
     };
   }, []);
 
-  const usingTrending = !loading && trending && trending.length > 0;
+  const usingTrending = !loading && trending && trending.length > 0 && ageFilter === "all";
+
+  const ageFilteredBooks = useMemo(() => {
+    if (ageFilter === "all") return fallbackBooks;
+    return pickByAgeBand(ageFilter, 4);
+  }, [ageFilter, fallbackBooks]);
 
   return (
     <div className="rb-wrap">
       <style>{`
         .rb-wrap { max-width: 900px; margin: 8px auto 60px; padding: 0 20px; }
         .rb-header { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #B0BBCC; font-weight: 700; margin-bottom: 8px; }
+        .rb-age-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+        .rb-age-chip { border: none; background: #EAF4FB; color: #7A88A3; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
+        .rb-age-chip.active { background: #33415C; color: #fff; }
         .rb-pr-badge { background: #F1F1EC; color: #9A9A8F; font-size: 9px; font-weight: 900; padding: 1px 6px; border-radius: 999px; }
         .rb-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
         .rb-card { flex-shrink: 0; width: 132px; background: #FFFBF3; border-radius: 14px; padding: 10px; text-decoration: none; color: #33415C; box-shadow: 0 2px 0 rgba(51,65,92,0.05); }
@@ -58,6 +75,17 @@ export default function RecommendedBooks() {
       <div className="rb-header">
         {usingTrending ? "🔥 絵本・児童書 今売れている本" : "📚 こんな本もおすすめ"}
         <span className="rb-pr-badge">PR</span>
+      </div>
+      <div className="rb-age-row">
+        {AGE_BANDS.map((band) => (
+          <button
+            key={band.key}
+            className={`rb-age-chip ${ageFilter === band.key ? "active" : ""}`}
+            onClick={() => setAgeFilter(band.key)}
+          >
+            {band.label}
+          </button>
+        ))}
       </div>
       <div className="rb-row">
         {usingTrending
@@ -78,7 +106,7 @@ export default function RecommendedBooks() {
                 <div className="rb-author">{b.author}</div>
               </a>
             ))
-          : fallbackBooks.map((b) => (
+          : ageFilteredBooks.map((b) => (
               <a
                 key={b.title}
                 className="rb-card"

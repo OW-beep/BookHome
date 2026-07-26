@@ -28,8 +28,27 @@ export default async function LandingPage() {
   const ctaHref = user ? "/library" : "/login";
   const ctaLabel = user ? "本棚を開く" : "無料ではじめる";
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "ブックホーム",
+    applicationCategory: "LifestyleApplication",
+    operatingSystem: "Web",
+    description:
+      "家族みんなでも、こども専用でも。バーコードで本を登録し、読書記録・読み聞かせ記録・思い出を残せる無料の本棚アプリ。",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "JPY",
+    },
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #EAF4FB 0%, #F3F8FC 420px, #F3F8FC 100%)" }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap');
         .lp-body { font-family: 'M PLUS Rounded 1c', sans-serif; color: #33415C; }

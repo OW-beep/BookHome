@@ -32,6 +32,7 @@ import StatsModal from "@/components/StatsModal";
 import RecommendedBooks from "@/components/RecommendedBooks";
 import ShareModal from "@/components/ShareModal";
 import FamilyModal from "@/components/FamilyModal";
+import RelatedBooks from "@/components/RelatedBooks";
 import { buildRakutenBookLink } from "@/lib/affiliate";
 import { getLevelInfo } from "@/lib/gamification";
 import { generateShareImage, generateBookShareImage } from "@/lib/shareImage";
@@ -121,6 +122,11 @@ export default function BookShelfClient({
   const levelInfo = getLevelInfo(totalReads);
   const level = levelInfo.level;
   const levelProgress = levelInfo.progress * 100;
+
+  const hasReadToday = useMemo(() => {
+    const todayKey = new Date().toISOString().slice(0, 10);
+    return readingLogs.some((l) => l.read_at.slice(0, 10) === todayKey);
+  }, [readingLogs]);
 
   const filtered = useMemo(() => {
     return books.filter((b) => {
@@ -426,6 +432,8 @@ export default function BookShelfClient({
         .bh-level-track { height: 10px; background: #E3ECF3; border-radius: 999px; overflow: hidden; }
         .bh-level-fill { height: 100%; background: linear-gradient(90deg, #FFC94A, #FF8FA0); border-radius: 999px; transition: width 0.5s ease; }
         .bh-controls { max-width: 900px; margin: 24px auto 8px; padding: 0 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .bh-nudge { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+        .bh-nudge-inner { background: #FFF4E5; border-radius: 14px; padding: 10px 16px; font-size: 12px; color: #9A7B3F; text-align: center; }
         .bh-search { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 14px; padding: 8px 14px; box-shadow: 0 2px 0 rgba(51,65,92,0.06); flex: 1; min-width: 160px; }
         .bh-search input { border: none; outline: none; font-family: inherit; font-size: 14px; width: 100%; background: transparent; color: #33415C; }
         .bh-genre-chips { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -553,6 +561,14 @@ export default function BookShelfClient({
           <div className="bh-stat-chip"><span className="bh-stat-num">{totalFavorites}</span>おきにいり</div>
         </div>
       </div>
+
+      {books.length > 0 && !hasReadToday && (
+        <div className="bh-nudge">
+          <div className="bh-nudge-inner">
+            📖 きょうはまだ記録がありません。1冊読んで記録をつけてみませんか？
+          </div>
+        </div>
+      )}
 
       <div className="bh-controls">
         <div className="bh-search">
@@ -995,6 +1011,12 @@ export default function BookShelfClient({
               <input placeholder="かんそうを書く..." value={newComment} onChange={(e) => setNewComment(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddComment(selectedBook.id)} />
               <button onClick={() => handleAddComment(selectedBook.id)}><PencilLine size={14} /></button>
             </div>
+
+            <RelatedBooks
+              author={selectedBook.author}
+              genre={selectedBook.genre}
+              currentTitle={selectedBook.title}
+            />
 
             <div className="bh-delete-row">
               <button className="bh-delete-link" onClick={() => handleDelete(selectedBook.id)}>
