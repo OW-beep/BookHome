@@ -22,7 +22,8 @@ Next.js (App Router) + TypeScript + Tailwind CSS + Supabase（認証・DB）構�
 - **年間読書目標**：目標冊数を設定すると進捗バーで表示
 - **読書カレンダー**：直近12週間の読書記録をGitHub風のヒートマップで表示
 - **SNSシェア**：今月の読了数・レベル・称号を達成画像として生成し、X／LINE／画像保存（Instagram用）でシェア可能
-- 統計ダッシュボード：蔵書数・定価の合計・平均定価・今月/今年よんだ回数・合計読書時間・読了率（完読ログ基準）・ジャンル割合・人気作者・人気出版社
+- **家族メンバー登録**：フル認証の家族アカウントの代わりに、1つのログインの中で「誰が読んだか」を軽量に管理。読書記録から選ぶだけで登録・集計でき、家族ランキングにも反映されます
+- 統計ダッシュボード：蔵書数・定価の合計・平均定価・今月/今年よんだ回数・合計読書時間・読了率（完読ログ基準）・ジャンル割合・人気作者・人気出版社・**家族ランキング**
 - データはSupabaseに保存され、ユーザーごとにRLSで保護されます
 
 ## 統計の集計基準について
@@ -74,6 +75,7 @@ Next.js (App Router) + TypeScript + Tailwind CSS + Supabase（認証・DB）構�
 - バーコードスキャン（ISBN・表紙URL保存用）：`supabase/migrations_003_isbn.sql`
 - 読書記録の詳細化（読んだ日・種類・読んだ人・読了）：`supabase/migrations_004_reading_detail.sql`
 - 年間読書目標：`supabase/migrations_005_goals.sql`
+- 家族メンバー登録：`supabase/migrations_006_family_members.sql`
 
 これから新規にプロジェクトを作る場合は `schema.sql` だけで最新の状態になります。
 

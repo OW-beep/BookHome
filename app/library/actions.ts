@@ -137,6 +137,27 @@ export async function addComment(bookId: string, text: string) {
   revalidatePath("/library");
 }
 
+export async function addFamilyMember(name: string, emoji: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("ログインが必要です");
+
+  const { error } = await supabase
+    .from("family_members")
+    .insert({ user_id: user.id, name, emoji });
+  if (error) throw new Error(error.message);
+  revalidatePath("/library");
+}
+
+export async function deleteFamilyMember(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("family_members").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/library");
+}
+
 export async function updateAnnualGoal(goal: number | null) {
   const supabase = await createClient();
   const {

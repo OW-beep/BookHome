@@ -61,6 +61,25 @@ create policy "user_settings_insert_own" on public.user_settings
 create policy "user_settings_update_own" on public.user_settings
   for update using (auth.uid() = user_id);
 
+create table if not exists public.family_members (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users not null default auth.uid(),
+  name text not null,
+  emoji text not null default '👤',
+  created_at timestamptz not null default now()
+);
+
+alter table public.family_members enable row level security;
+
+create policy "family_members_select_own" on public.family_members
+  for select using (auth.uid() = user_id);
+
+create policy "family_members_insert_own" on public.family_members
+  for insert with check (auth.uid() = user_id);
+
+create policy "family_members_delete_own" on public.family_members
+  for delete using (auth.uid() = user_id);
+
 -- コメント（思い出メモ）テーブル
 create table if not exists public.book_comments (
   id uuid primary key default gen_random_uuid(),

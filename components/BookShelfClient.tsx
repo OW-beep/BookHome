@@ -14,7 +14,7 @@ import {
   PencilLine,
   LogOut,
 } from "lucide-react";
-import { Book, ReadingLog, UserSettings, GENRES, COVER_COLORS, EMOJIS } from "@/lib/types";
+import { Book, ReadingLog, UserSettings, FamilyMember, GENRES, COVER_COLORS, EMOJIS } from "@/lib/types";
 import {
   addBook,
   updateBook,
@@ -24,14 +24,17 @@ import {
   signOut,
   logRead,
   updateAnnualGoal,
+  addFamilyMember,
+  deleteFamilyMember,
   NewBookInput,
 } from "@/app/library/actions";
 import StatsModal from "@/components/StatsModal";
 import RecommendedBooks from "@/components/RecommendedBooks";
 import ShareModal from "@/components/ShareModal";
+import FamilyModal from "@/components/FamilyModal";
 import { buildRakutenBookLink } from "@/lib/affiliate";
 import { getLevelInfo } from "@/lib/gamification";
-import { BarChart3, Share2 } from "lucide-react";
+import { BarChart3, Share2, Users } from "lucide-react";
 
 type ScanStatus =
   | "idle"
@@ -51,20 +54,24 @@ export default function BookShelfClient({
   initialBooks,
   initialReadingLogs,
   initialSettings,
+  initialFamilyMembers,
   userEmail,
 }: {
   initialBooks: Book[];
   initialReadingLogs: ReadingLog[];
   initialSettings: UserSettings;
+  initialFamilyMembers: FamilyMember[];
   userEmail: string;
 }) {
   const [books, setBooks] = useState<Book[]>(initialBooks);
   const [readingLogs, setReadingLogs] =
     useState<ReadingLog[]>(initialReadingLogs);
   const [settings, setSettings] = useState<UserSettings>(initialSettings);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialFamilyMembers);
   const [isPending, startTransition] = useTransition();
   const [showStats, setShowStats] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showFamily, setShowFamily] = useState(false);
   const [readMinutes, setReadMinutes] = useState("");
   const [readDate, setReadDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [readingType, setReadingType] = useState<"self_read" | "read_aloud">("self_read");
@@ -515,6 +522,9 @@ export default function BookShelfClient({
           <button className="bh-signout" style={{ position: "static" }} onClick={() => setShowShare(true)}>
             <Share2 size={12} /> シェア
           </button>
+          <button className="bh-signout" style={{ position: "static" }} onClick={() => setShowFamily(true)}>
+            <Users size={12} /> 家族
+          </button>
         </div>
         <div className="bh-logo-row">
           <svg width="32" height="32" viewBox="0 0 64 64" fill="none">
@@ -873,16 +883,48 @@ export default function BookShelfClient({
                 />
               </div>
 
+              {familyMembers.length > 0 && (
+                <div className="bh-readers-row" style={{ marginTop: 10 }}>
+                  {familyMembers.map((m) => {
+                    const selected = readersList.includes(m.name);
+                    return (
+                      <button
+                        type="button"
+                        key={m.id}
+                        className="bh-reader-chip"
+                        style={{
+                          background: selected ? "#33415C" : "#fff",
+                          color: selected ? "#fff" : "#33415C",
+                          cursor: "pointer",
+                          border: "none",
+                        }}
+                        onClick={() => {
+                          setReadersList((prev) =>
+                            selected
+                              ? prev.filter((n) => n !== m.name)
+                              : [...prev, m.name]
+                          );
+                        }}
+                      >
+                        {m.emoji} {m.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               <div className="bh-readers-row">
-                {readersList.map((name) => (
-                  <span className="bh-reader-chip" key={name}>
-                    {name}
-                    <button type="button" onClick={() => removeReaderChip(name)}><X size={10} /></button>
-                  </span>
-                ))}
+                {readersList
+                  .filter((name) => !familyMembers.some((m) => m.name === name))
+                  .map((name) => (
+                    <span className="bh-reader-chip" key={name}>
+                      {name}
+                      <button type="button" onClick={() => removeReaderChip(name)}><X size={10} /></button>
+                    </span>
+                  ))}
                 <input
                   className="bh-reader-input"
-                  placeholder="読んだ人を追加"
+                  placeholder="その他の名前を追加"
                   value={readerInput}
                   onChange={(e) => setReaderInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -957,6 +999,26 @@ export default function BookShelfClient({
           </div>
         </div>
       )}
+      {showFamily && (
+        <FamilyModal
+          members={familyMembers}
+          onAdd={(name, emoji) => {
+            const temp: FamilyMember = { id: `temp-${Date.now()}`, name, emoji };
+            setFamilyMembers((prev) => [...prev, temp]);
+            startTransition(async () => {
+              await addFamilyMember(name, emoji);
+            });
+          }}
+          onDelete={(id) => {
+            setFamilyMembers((prev) => prev.filter((m) => m.id !== id));
+            startTransition(async () => {
+              await deleteFamilyMember(id);
+            });
+          }}
+          onClose={() => setShowFamily(false)}
+        />
+      )}
+
       {showShare && (
         <ShareModal
           monthCount={readingLogs.filter((l) => {
@@ -975,6 +1037,7 @@ export default function BookShelfClient({
         <StatsModal
           books={books}
           readingLogs={readingLogs}
+          familyMembers={familyMembers}
           annualGoal={settings.annual_goal}
           onSaveGoal={(goal) => {
             setSettings({ annual_goal: goal });

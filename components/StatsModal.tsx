@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { X, TrendingUp } from "lucide-react";
-import { Book, ReadingLog } from "@/lib/types";
+import { Book, ReadingLog, FamilyMember } from "@/lib/types";
 import { computeBadges, buildCalendarData, computeCurrentStreak } from "@/lib/gamification";
 
 function yen(n: number) {
@@ -19,12 +19,14 @@ function calendarColor(count: number) {
 export default function StatsModal({
   books,
   readingLogs,
+  familyMembers,
   annualGoal,
   onSaveGoal,
   onClose,
 }: {
   books: Book[];
   readingLogs: ReadingLog[];
+  familyMembers: FamilyMember[];
   annualGoal: number | null;
   onSaveGoal: (goal: number | null) => void;
   onClose: () => void;
@@ -35,6 +37,21 @@ export default function StatsModal({
   const badges = useMemo(() => computeBadges(books, readingLogs), [books, readingLogs]);
   const calendarDays = useMemo(() => buildCalendarData(readingLogs), [readingLogs]);
   const streak = useMemo(() => computeCurrentStreak(readingLogs), [readingLogs]);
+
+  const familyRanking = useMemo(() => {
+    const counts = new Map<string, number>();
+    familyMembers.forEach((m) => counts.set(m.name, 0));
+    readingLogs.forEach((l) => {
+      (l.readers ?? []).forEach((name) => {
+        if (counts.has(name)) {
+          counts.set(name, (counts.get(name) ?? 0) + 1);
+        }
+      });
+    });
+    return familyMembers
+      .map((m) => ({ member: m, count: counts.get(m.name) ?? 0 }))
+      .sort((a, b) => b.count - a.count);
+  }, [familyMembers, readingLogs]);
   const stats = useMemo(() => {
     const now = new Date();
     const thisMonth = now.getMonth();
@@ -329,9 +346,23 @@ export default function StatsModal({
         )}
 
         <div className="stats-section-title">家族ランキング</div>
-        <div className="stats-family-note">
-          この機能は家族アカウント（複数人での共有）を実装した後に追加予定です。
-        </div>
+        {familyMembers.length === 0 ? (
+          <div className="stats-family-note">
+            「👪 家族」ボタンから家族メンバーを登録すると、読んだ回数のランキングがここに表示されます。
+          </div>
+        ) : (
+          <div className="stats-rank-list">
+            {familyRanking.map(({ member, count }, i) => (
+              <div className="stats-rank-item" key={member.id}>
+                <span className="stats-rank-name">
+                  {i === 0 && count > 0 ? "🥇 " : i === 1 && count > 0 ? "🥈 " : i === 2 && count > 0 ? "🥉 " : ""}
+                  {member.emoji} {member.name}
+                </span>
+                <span className="stats-rank-score">{count}回よんだ</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

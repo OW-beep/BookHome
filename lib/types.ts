@@ -58,6 +58,12 @@ export type Book = {
 
 export type ReadingType = "self_read" | "read_aloud";
 
+export type FamilyMember = {
+  id: string;
+  name: string;
+  emoji: string;
+};
+
 export type UserSettings = {
   annual_goal: number | null;
 };

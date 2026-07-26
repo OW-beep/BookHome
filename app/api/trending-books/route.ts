@@ -60,6 +60,9 @@ export async function GET() {
       booksGenreId: CHILDRENS_BOOKS_GENRE_ID,
       hits: "8",
       format: "json",
+      referrer: siteUrl,
+      httpReferrer: siteUrl,
+      origin: siteUrl,
     });
     if (affiliateId) params.set("affiliateId", affiliateId);
 
