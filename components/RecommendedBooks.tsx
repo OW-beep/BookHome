@@ -53,7 +53,8 @@ export default function RecommendedBooks() {
 
   const ageFilteredBooks = useMemo(() => {
     if (ageFilter === "all") return fallbackBooks;
-    return pickByAgeBand(ageFilter, 4);
+    const matches = pickByAgeBand(ageFilter, 4);
+    return matches.length > 0 ? matches : fallbackBooks;
   }, [ageFilter, fallbackBooks]);
 
   return (

@@ -27,12 +27,12 @@ function parseNdlOpenSearch(xml: string): NdlItem[] {
       .trim();
     if (!title) continue;
 
-    // description の先頭付近に "巻,出版社,年,ISBN" のような形式で入っていることが多いので、
-    // 13桁または10桁の数字列（ISBN）をゆるく拾う
+    // description の先頭付近に "巻,出版社,年,ISBN" のような形式で入っていることが多い。
+    // ISBNはハイフンあり/なし両方のパターンに対応する
     const descMatch = block.match(/<description>([\s\S]*?)<\/description>/);
     const descText = descMatch ? descMatch[1] : "";
-    const isbnMatch = descText.match(/(\d{13}|\d{9}[\dXx])/);
-    const isbn = isbnMatch ? isbnMatch[1].toUpperCase() : null;
+    const isbnMatch = descText.match(/97[89][\d-]{10,17}|(\d{9}[\dXx])/);
+    const isbn = isbnMatch ? isbnMatch[0].replace(/-/g, "").toUpperCase() : null;
 
     items.push({ title, isbn });
   }
@@ -88,6 +88,29 @@ async function searchGoogleBooks(query: string): Promise<SearchResult[]> {
   }
 }
 
+async function enrichByTitle(title: string): Promise<Partial<SearchResult> | null> {
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+        `intitle:"${title}"`
+      )}&maxResults=1&country=JP`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const item = data?.items?.[0];
+    if (!item?.volumeInfo) return null;
+    const info = item.volumeInfo;
+    return {
+      author: Array.isArray(info.authors) ? info.authors.join(", ") : null,
+      publisher: info.publisher || null,
+      cover_image_url: info.imageLinks?.thumbnail || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim();
 
@@ -114,14 +137,16 @@ export async function GET(request: NextRequest) {
             };
           }
         }
-        // ISBNが取れなかった、または詳細情報が見つからなかった場合は
-        // タイトルだけの簡易な候補として返す（表紙・著者なしでも選択可能）
+
+        // ISBNが取れなかった、またはISBNからの詳細取得に失敗した場合は
+        // タイトルでの補完検索を試みる（著者・表紙だけでも拾えることがある）
+        const supplement = await enrichByTitle(item.title);
         return {
           isbn: item.isbn,
           title: item.title,
-          author: null,
-          publisher: null,
-          cover_image_url: null,
+          author: supplement?.author ?? null,
+          publisher: supplement?.publisher ?? null,
+          cover_image_url: supplement?.cover_image_url ?? null,
         };
       })
     );
