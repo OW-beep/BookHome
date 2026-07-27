@@ -50,7 +50,6 @@ export default async function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap');
         .lp-body { font-family: 'M PLUS Rounded 1c', sans-serif; color: #33415C; }
         .lp-hero { max-width: 720px; margin: 0 auto; padding: 56px 20px 24px; text-align: center; }
         .lp-logo-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -107,7 +106,13 @@ export default async function LandingPage() {
           ))}
         </div>
 
-        <div className="lp-footer">ブックホーム — データはログイン後、あなたの本棚として安全に保存されます</div>
+        <div className="lp-footer">
+          ブックホーム — データはログイン後、あなたの本棚として安全に保存されます
+          <br />
+          <a href="/privacy" style={{ color: "#B0BBCC" }}>プライバシーポリシー</a>
+          {" ・ "}
+          <a href="/terms" style={{ color: "#B0BBCC" }}>利用規約</a>
+        </div>
       </div>
     </div>
   );

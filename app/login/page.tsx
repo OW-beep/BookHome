@@ -118,6 +118,12 @@ export default function LoginPage() {
             )}
           </form>
         )}
+
+        <p style={{ fontSize: 10, color: "#B0BBCC", marginTop: 20 }}>
+          <a href="/privacy" style={{ color: "#B0BBCC" }}>プライバシーポリシー</a>
+          {" ・ "}
+          <a href="/terms" style={{ color: "#B0BBCC" }}>利用規約</a>
+        </p>
       </div>
     </div>
   );

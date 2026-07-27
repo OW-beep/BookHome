@@ -71,6 +71,24 @@ export default function BookShelfClient({
   const [settings, setSettings] = useState<UserSettings>(initialSettings);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialFamilyMembers);
   const [isPending, startTransition] = useTransition();
+  const [errorToast, setErrorToast] = useState<string | null>(null);
+
+  function runAction(fn: () => Promise<void>, onError?: () => void) {
+    startTransition(async () => {
+      try {
+        await fn();
+      } catch (e) {
+        onError?.();
+        setErrorToast(
+          e instanceof Error
+            ? `保存に失敗しました：${e.message}`
+            : "保存に失敗しました。もう一度お試しください。"
+        );
+        setTimeout(() => setErrorToast(null), 5000);
+      }
+    });
+  }
+
   const [showStats, setShowStats] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [shareBookId, setShareBookId] = useState<string | null>(null);
@@ -304,6 +322,7 @@ export default function BookShelfClient({
 
     if (editingBookId) {
       const id = editingBookId;
+      const previous = books.find((b) => b.id === id);
       optimisticPatch(id, {
         title: payload.title,
         author: payload.author || null,
@@ -316,11 +335,16 @@ export default function BookShelfClient({
         isbn: payload.isbn ?? null,
         cover_image_url: payload.cover_image_url ?? null,
       });
-      startTransition(async () => {
-        await updateBookDetails(id, payload);
-      });
+      runAction(
+        async () => {
+          await updateBookDetails(id, payload);
+        },
+        () => {
+          if (previous) optimisticPatch(id, previous);
+        }
+      );
     } else {
-      startTransition(async () => {
+      runAction(async () => {
         await addBook(payload);
       });
     }
@@ -351,12 +375,13 @@ export default function BookShelfClient({
     const readers = readerInput.trim()
       ? [...readersList, readerInput.trim()]
       : readersList;
+    const tempLogId = `temp-${Date.now()}`;
 
     optimisticPatch(book.id, { read_count: next });
     setReadingLogs((prev) => [
       ...prev,
       {
-        id: `temp-${Date.now()}`,
+        id: tempLogId,
         book_id: book.id,
         minutes,
         reading_type: readingType,
@@ -366,15 +391,21 @@ export default function BookShelfClient({
       },
     ]);
 
-    startTransition(async () => {
-      await logRead(book.id, book.read_count, {
-        minutes,
-        read_at: readAtIso,
-        reading_type: readingType,
-        readers,
-        completed: readCompleted,
-      });
-    });
+    runAction(
+      async () => {
+        await logRead(book.id, book.read_count, {
+          minutes,
+          read_at: readAtIso,
+          reading_type: readingType,
+          readers,
+          completed: readCompleted,
+        });
+      },
+      () => {
+        optimisticPatch(book.id, { read_count: book.read_count });
+        setReadingLogs((prev) => prev.filter((l) => l.id !== tempLogId));
+      }
+    );
 
     setReadMinutes("");
     setReadersList([]);
@@ -384,35 +415,55 @@ export default function BookShelfClient({
   }
 
   function handleSetRating(book: Book, rating: number) {
+    const previousRating = book.rating;
     optimisticPatch(book.id, { rating });
-    startTransition(async () => {
-      await updateBook(book.id, { rating });
-    });
+    runAction(
+      async () => {
+        await updateBook(book.id, { rating });
+      },
+      () => optimisticPatch(book.id, { rating: previousRating })
+    );
   }
 
   function handleToggleFavorite(book: Book) {
     const favorite = !book.favorite;
     optimisticPatch(book.id, { favorite });
-    startTransition(async () => {
-      await updateBook(book.id, { favorite });
-    });
+    runAction(
+      async () => {
+        await updateBook(book.id, { favorite });
+      },
+      () => optimisticPatch(book.id, { favorite: !favorite })
+    );
   }
 
   function handleAddComment(bookId: string) {
     if (!newComment.trim()) return;
     const text = newComment.trim();
     setNewComment("");
-    startTransition(async () => {
+    runAction(async () => {
       await addComment(bookId, text);
     });
   }
 
   function handleDelete(id: string) {
+    const previous = books.find((b) => b.id === id);
+    const previousIndex = books.findIndex((b) => b.id === id);
     setBooks((prev) => prev.filter((b) => b.id !== id));
     setSelectedId(null);
-    startTransition(async () => {
-      await deleteBook(id);
-    });
+    runAction(
+      async () => {
+        await deleteBook(id);
+      },
+      () => {
+        if (previous) {
+          setBooks((prev) => {
+            const next = [...prev];
+            next.splice(previousIndex, 0, previous);
+            return next;
+          });
+        }
+      }
+    );
   }
 
   return (
@@ -420,7 +471,8 @@ export default function BookShelfClient({
       <style>{`
         .bh-app { font-family: 'M PLUS Rounded 1c', sans-serif; background: linear-gradient(180deg, #EAF4FB 0%, #F3F8FC 320px, #F3F8FC 100%); min-height: 100vh; color: #33415C; padding-bottom: 80px; }
         .bh-header { padding: 24px 20px 18px; text-align: center; position: relative; }
-        .bh-signout { position: absolute; top: 24px; right: 20px; display: flex; align-items: center; gap: 4px; background: #fff; border: none; border-radius: 999px; padding: 6px 12px; font-size: 11px; color: #7A88A3; cursor: pointer; box-shadow: 0 2px 0 rgba(51,65,92,0.06); }
+        .bh-toolbar { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
+        .bh-signout { display: flex; align-items: center; gap: 4px; background: #fff; border: none; border-radius: 999px; padding: 6px 12px; font-size: 11px; color: #7A88A3; cursor: pointer; box-shadow: 0 2px 0 rgba(51,65,92,0.06); }
         .bh-logo-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
         .bh-logo-title { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900; font-size: 28px; color: #33415C; }
         .bh-tagline { margin-top: 6px; font-size: 12px; color: #7A88A3; font-weight: 500; }
@@ -434,6 +486,7 @@ export default function BookShelfClient({
         .bh-controls { max-width: 900px; margin: 24px auto 8px; padding: 0 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .bh-nudge { max-width: 900px; margin: 0 auto; padding: 0 20px; }
         .bh-nudge-inner { background: #FFF4E5; border-radius: 14px; padding: 10px 16px; font-size: 12px; color: #9A7B3F; text-align: center; }
+        .bh-error-toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #33415C; color: #fff; padding: 12px 20px; border-radius: 999px; font-size: 13px; font-weight: 700; box-shadow: 0 6px 16px rgba(0,0,0,0.2); z-index: 100; max-width: 90vw; text-align: center; }
         .bh-search { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 14px; padding: 8px 14px; box-shadow: 0 2px 0 rgba(51,65,92,0.06); flex: 1; min-width: 160px; }
         .bh-search input { border: none; outline: none; font-family: inherit; font-size: 14px; width: 100%; background: transparent; color: #33415C; }
         .bh-genre-chips { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -515,25 +568,26 @@ export default function BookShelfClient({
       `}</style>
 
       <div className="bh-header">
-        <button
-          className="bh-signout"
-          onClick={() => {
-            if (window.confirm("ログアウトしますか？次にログインするには、もう一度メールでの認証が必要です。")) {
-              startTransition(async () => await signOut());
-            }
-          }}
-        >
-          <LogOut size={12} /> {userEmail} をログアウト
-        </button>
-        <div style={{ position: "absolute", top: 24, left: 20, display: "flex", gap: 6 }}>
-          <button className="bh-signout" style={{ position: "static" }} onClick={() => setShowStats(true)}>
+        <div className="bh-toolbar">
+          <button className="bh-signout" onClick={() => setShowStats(true)}>
             <BarChart3 size={12} /> 統計
           </button>
-          <button className="bh-signout" style={{ position: "static" }} onClick={() => setShowShare(true)}>
+          <button className="bh-signout" onClick={() => setShowShare(true)}>
             <Share2 size={12} /> シェア
           </button>
-          <button className="bh-signout" style={{ position: "static" }} onClick={() => setShowFamily(true)}>
+          <button className="bh-signout" onClick={() => setShowFamily(true)}>
             <Users size={12} /> 家族
+          </button>
+          <button
+            className="bh-signout"
+            title={userEmail}
+            onClick={() => {
+              if (window.confirm("ログアウトしますか？次にログインするには、もう一度メールでの認証が必要です。")) {
+                startTransition(async () => await signOut());
+              }
+            }}
+          >
+            <LogOut size={12} /> ログアウト
           </button>
         </div>
         <div className="bh-logo-row">
@@ -1032,15 +1086,24 @@ export default function BookShelfClient({
           onAdd={(name, emoji) => {
             const temp: FamilyMember = { id: `temp-${Date.now()}`, name, emoji };
             setFamilyMembers((prev) => [...prev, temp]);
-            startTransition(async () => {
-              await addFamilyMember(name, emoji);
-            });
+            runAction(
+              async () => {
+                await addFamilyMember(name, emoji);
+              },
+              () => setFamilyMembers((prev) => prev.filter((m) => m.id !== temp.id))
+            );
           }}
           onDelete={(id) => {
+            const previous = familyMembers.find((m) => m.id === id);
             setFamilyMembers((prev) => prev.filter((m) => m.id !== id));
-            startTransition(async () => {
-              await deleteFamilyMember(id);
-            });
+            runAction(
+              async () => {
+                await deleteFamilyMember(id);
+              },
+              () => {
+                if (previous) setFamilyMembers((prev) => [...prev, previous]);
+              }
+            );
           }}
           onClose={() => setShowFamily(false)}
         />
@@ -1109,14 +1172,20 @@ export default function BookShelfClient({
           familyMembers={familyMembers}
           annualGoal={settings.annual_goal}
           onSaveGoal={(goal) => {
+            const previous = settings.annual_goal;
             setSettings({ annual_goal: goal });
-            startTransition(async () => {
-              await updateAnnualGoal(goal);
-            });
+            runAction(
+              async () => {
+                await updateAnnualGoal(goal);
+              },
+              () => setSettings({ annual_goal: previous })
+            );
           }}
           onClose={() => setShowStats(false)}
         />
       )}
+
+      {errorToast && <div className="bh-error-toast">⚠️ {errorToast}</div>}
     </div>
   );
 }
