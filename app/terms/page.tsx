@@ -4,7 +4,7 @@ export default function TermsPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "48px 20px", fontFamily: "'M PLUS Rounded 1c', sans-serif", color: "#33415C", lineHeight: 1.8 }}>
       <h1 style={{ fontFamily: "'Zen Maru Gothic', sans-serif", fontSize: 24 }}>利用規約</h1>
-      <p style={{ fontSize: 13, color: "#7A88A3" }}>最終更新日：2026年7月</p>
+      <p style={{ fontSize: 13, color: "#7A88A3" }}>最終更新日：2026年8月2日</p>
 
       <p>
         この利用規約（以下「本規約」）は、運営者（以下「当方」）が提供する読書記録サービス「ブックホーム」

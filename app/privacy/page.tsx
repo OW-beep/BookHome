@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "48px 20px", fontFamily: "'M PLUS Rounded 1c', sans-serif", color: "#33415C", lineHeight: 1.8 }}>
       <h1 style={{ fontFamily: "'Zen Maru Gothic', sans-serif", fontSize: 24 }}>プライバシーポリシー</h1>
-      <p style={{ fontSize: 13, color: "#7A88A3" }}>最終更新日：2026年7月</p>
+      <p style={{ fontSize: 13, color: "#7A88A3" }}>最終更新日：2026年8月2日</p>
 
       <p>
         ブックホーム（以下「当サイト」）は、利用者の個人情報の保護を重要な責務と考え、以下のとおりプライバシーポリシーを定めます。

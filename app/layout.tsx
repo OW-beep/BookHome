@@ -28,7 +28,7 @@ export const metadata: Metadata = {
       "家族みんなでも、こども専用でも。バーコードで本を登録し、読書記録・思い出を残せる無料の本棚アプリ。",
   },
   verification: {
-    google: "KYZp6leIoJkmXQipodIUtUhXTopgEfgqFiQ7eJZuRZA",
+    google: "T4_gFHNcVTITCIBRxOFrzaCjgVKhvo4VsrtoMROauXI",
   },
 };
 
