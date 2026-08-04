@@ -43,6 +43,13 @@ Next.js (App Router) + TypeScript + Tailwind CSS + Supabase（認証・DB）構�
 
 `/library`（ログイン必須ページ）や `/api`、`/auth` はクロール対象から自動的に除外されます（`robots.txt`で制御）。
 
+## Google Analyticsを有効にする
+
+1. Google Analyticsで発行された測定ID（`G-`から始まる文字列）をコピー
+2. Vercelの Environment Variables に `NEXT_PUBLIC_GA_MEASUREMENT_ID` として追加し、Redeploy
+
+未設定の間はアクセス解析タグ自体が読み込まれません。
+
 ## 「今売れている本」ランキングを有効にする
 
 **2026年5月に楽天ウェブサービスの仕様が大きく変わり、アプリケーションIDに加えて「アクセスキー」も必要になりました。**

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,26 +33,20 @@ export const metadata: Metadata = {
   },
 };
 
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
-
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
   return (
     <html lang="ja">
       <body>
-        {children}
-
-        {/* Vercel Analytics: 環境変数の設定不要。Vercelにデプロイするだけで自動計測されます */}
-        <Analytics />
-
-        {/* Google Analytics 4: NEXT_PUBLIC_GA_MEASUREMENT_ID を設定した場合のみ読み込まれます */}
-        {GA_MEASUREMENT_ID && (
+        {gaId && (
           <>
             <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
               strategy="afterInteractive"
             />
             <Script id="ga4-init" strategy="afterInteractive">
@@ -61,11 +54,12 @@ export default function RootLayout({
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
-                gtag('config', '${GA_MEASUREMENT_ID}');
+                gtag('config', '${gaId}');
               `}
             </Script>
           </>
         )}
+        {children}
       </body>
     </html>
   );

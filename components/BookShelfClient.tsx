@@ -33,7 +33,7 @@ import RecommendedBooks from "@/components/RecommendedBooks";
 import ShareModal from "@/components/ShareModal";
 import FamilyModal from "@/components/FamilyModal";
 import RelatedBooks from "@/components/RelatedBooks";
-import { buildRakutenBookLink, buildRakutenKoboLink, buildAmazonBookLink } from "@/lib/affiliate";
+import { buildRakutenBookLink, buildRakutenKoboLink } from "@/lib/affiliate";
 import { getLevelInfo } from "@/lib/gamification";
 import { generateShareImage, generateBookShareImage } from "@/lib/shareImage";
 import { BarChart3, Share2, Users } from "lucide-react";
@@ -531,7 +531,6 @@ export default function BookShelfClient({
         .bh-detail-author { text-align: center; font-size: 13px; color: #7A88A3; margin-top: 4px; }
         .bh-genre-tag { display: block; text-align: center; margin: 8px auto 14px; font-size: 11px; font-weight: 700; color: #33415C; background: #EAF4FB; border-radius: 999px; padding: 3px 12px; width: fit-content; }
         .bh-affiliate-wrap { text-align: center; margin-bottom: 16px; }
-        .bh-affiliate-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
         .bh-affiliate-btn { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 2px solid #FFC94A; color: #33415C; text-decoration: none; font-weight: 700; font-size: 13px; padding: 8px 16px; border-radius: 999px; }
         .bh-pr-badge { background: #FFC94A; color: #7A5A00; font-size: 9px; font-weight: 900; padding: 1px 6px; border-radius: 999px; }
         .bh-affiliate-note { font-size: 10px; color: #B0BBCC; margin-top: 6px; }
@@ -887,7 +886,7 @@ export default function BookShelfClient({
             <div className="bh-genre-tag">{selectedBook.genre}</div>
 
             <div className="bh-affiliate-wrap">
-              <div className="bh-affiliate-row">
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                 <a
                   className="bh-affiliate-btn"
                   href={buildRakutenBookLink({ isbn: selectedBook.isbn, title: selectedBook.title })}
@@ -903,14 +902,6 @@ export default function BookShelfClient({
                   rel="noopener noreferrer nofollow sponsored"
                 >
                   📱 Koboで電子書籍を探す <span className="bh-pr-badge">PR</span>
-                </a>
-                <a
-                  className="bh-affiliate-btn"
-                  href={buildAmazonBookLink({ isbn: selectedBook.isbn, title: selectedBook.title })}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow sponsored"
-                >
-                  📦 Amazonで探す <span className="bh-pr-badge">PR</span>
                 </a>
               </div>
               <div className="bh-affiliate-note">
