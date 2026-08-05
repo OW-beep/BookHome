@@ -217,6 +217,12 @@ export default async function LandingPage() {
           <a className="lp-cta" href={ctaHref}>{ctaLabel}</a>
         </div>
 
+        <div style={{ textAlign: "center", marginTop: 40, marginBottom: 20 }}>
+          <a href="/articles" style={{ fontSize: 13, color: "#7A88A3", textDecoration: "underline" }}>
+            📖 絵本・読み聞かせにまつわる読みものはこちら
+          </a>
+        </div>
+
         <div className="lp-footer">
           ブックホーム — データはログイン後、あなたの本棚として安全に保存されます
           <br />

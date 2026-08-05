@@ -1,4 +1,5 @@
 import { MetadataRoute } from "next";
+import { ARTICLES } from "@/lib/articles";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl =
@@ -17,5 +18,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.5,
     },
+    {
+      url: `${baseUrl}/articles`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    ...ARTICLES.map((a) => ({
+      url: `${baseUrl}/articles/${a.slug}`,
+      lastModified: new Date(a.publishedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
   ];
 }
