@@ -33,7 +33,7 @@ import RecommendedBooks from "@/components/RecommendedBooks";
 import ShareModal from "@/components/ShareModal";
 import FamilyModal from "@/components/FamilyModal";
 import RelatedBooks from "@/components/RelatedBooks";
-import { buildRakutenBookLink, buildRakutenKoboLink } from "@/lib/affiliate";
+import { buildRakutenBookLink, buildRakutenKoboLink, buildAmazonBookLink } from "@/lib/affiliate";
 import { getLevelInfo } from "@/lib/gamification";
 import { generateShareImage, generateBookShareImage } from "@/lib/shareImage";
 import { BarChart3, Share2, Users } from "lucide-react";
@@ -902,6 +902,14 @@ export default function BookShelfClient({
                   rel="noopener noreferrer nofollow sponsored"
                 >
                   📱 Koboで電子書籍を探す <span className="bh-pr-badge">PR</span>
+                </a>
+                <a
+                  className="bh-affiliate-btn"
+                  href={buildAmazonBookLink({ isbn: selectedBook.isbn, title: selectedBook.title })}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow sponsored"
+                >
+                  📦 Amazonで探す <span className="bh-pr-badge">PR</span>
                 </a>
               </div>
               <div className="bh-affiliate-note">

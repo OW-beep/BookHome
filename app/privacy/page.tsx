@@ -21,7 +21,7 @@ export default function PrivacyPage() {
 
       <h2 style={{ fontFamily: "'Zen Maru Gothic', sans-serif", fontSize: 18, marginTop: 32 }}>2. 広告・アフィリエイトについて</h2>
       <p>
-        当サイトでは、第三者配信の広告・アフィリエイトサービス（楽天アフィリエイト、Google AdSense等）を利用または利用予定です。
+        当サイトでは、第三者配信の広告・アフィリエイトサービス（楽天アフィリエイト、Amazonアソシエイト、Google AdSense等）を利用または利用予定です。
       </p>
       <p>
         これらの配信事業者は、利用者の興味に応じた広告・商品を表示するため、Cookie等を利用する場合があります。
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
 
       <h2 style={{ fontFamily: "'Zen Maru Gothic', sans-serif", fontSize: 18, marginTop: 32 }}>5. アフィリエイトプログラム</h2>
       <p>
-        当サイトは、楽天アフィリエイト等の各種アフィリエイトプログラムを利用しています。
+        当サイトは、楽天アフィリエイト、Amazonアソシエイト等の各種アフィリエイトプログラムを利用しています。
         掲載する商品・サービスに関するお問い合わせは、販売元へ直接お願いいたします。購入・契約等に関する責任は負いかねます。
       </p>
 

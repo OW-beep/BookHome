@@ -34,3 +34,13 @@ export function buildRakutenKoboLink(query: { title: string }): string {
   const encoded = encodeURIComponent(target);
   return `https://hb.afl.rakuten.co.jp/hgc/${affiliateId}/?pc=${encoded}&m=${encoded}`;
 }
+
+export function buildAmazonBookLink(query: {
+  isbn?: string | null;
+  title: string;
+}): string {
+  const keyword = query.isbn || query.title;
+  const tag = process.env.NEXT_PUBLIC_AMAZON_ASSOCIATE_TAG;
+  const base = `https://www.amazon.co.jp/s?k=${encodeURIComponent(keyword)}`;
+  return tag ? `${base}&tag=${encodeURIComponent(tag)}` : base;
+}
