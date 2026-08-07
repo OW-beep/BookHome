@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Book, ReadingLog, UserSettings, FamilyMember } from "@/lib/types";
 import BookShelfClient from "@/components/BookShelfClient";
@@ -10,6 +11,13 @@ export default async function LibraryPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // ログアウト直後など、未ログイン状態でこのページのレンダリングが
+  // 走った場合はここで /login に戻す（middleware は同一リクエスト内の
+  // signOut Server Action を検知できないため、ページ側でも保険として必要）。
+  if (!user) {
+    redirect("/login");
+  }
 
   const { data, error } = await supabase
     .from("books")
