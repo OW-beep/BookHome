@@ -148,9 +148,7 @@ export default function LoginPage() {
                 </p>
               )}
             </form>
-            <p style={{ color: "#B0BBCC", fontSize: 11, marginTop: 16 }}>
-              または、メール内のリンクをタップしてもログインできます。
-            </p>
+
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ marginTop: 24 }}>
