@@ -44,6 +44,33 @@ Next.js (App Router) + TypeScript + Tailwind CSS + Supabase（認証・DB）構�
 
 `/library`（ログイン必須ページ）や `/api`、`/auth` はクロール対象から自動的に除外されます（`robots.txt`で制御）。
 
+## ログイン方式について（2026年8月改修）
+
+メール認証を「リンクをタップする」方式に加えて、**「6桁のコードを入力する」方式**も選べるようにしました。ブラウザを行き来する必要がなく、離脱率の低下が期待できます。
+
+### 必須の設定変更：メールテンプレートに6桁コードを追加
+
+Supabaseダッシュボード → Authentication → Emails → Templates → Magic Link を開き、本文のHTML内に **`{{ .Token }}`** を目立つ形で追加してください。以下はBrevo経由で使っている既存テンプレートへの追加例です（ボタンの下あたりに挿入）。
+
+```html
+<p style="margin:24px 0 0;font-size:13px;color:#7A88A3;">
+  またはこのコードを入力してログイン：
+</p>
+<p style="font-size:32px;font-weight:900;letter-spacing:8px;color:#33415C;margin:8px 0 0;">
+  {{ .Token }}
+</p>
+```
+
+この設定をしないと、コード入力欄に入力しても認証できません（リンク方式は今まで通り動作します）。
+
+## GA4のイベント計測
+
+以下のイベントを自動送信するようにしています。GA4側で「管理 → イベント」から、`login_success`と`book_added`を**キーイベント（コンバージョン）に指定**すると、登録率などがレポートで見やすくなります。
+
+- `login_success`：ログイン完了時（`method`: `magic_link` または `otp_code`）
+- `barcode_scanned`：バーコードスキャンで書籍情報が見つかった時
+- `book_added`：本が登録された時（`first_book`: 初回登録かどうか、`via_scan`: スキャン経由かどうか）
+
 ## Google Analyticsを有効にする
 
 1. Google Analyticsで発行された測定ID（`G-`から始まる文字列）をコピー

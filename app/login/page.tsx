@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { trackEvent } from "@/lib/analytics";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -9,6 +10,10 @@ export default function LoginPage() {
     "idle"
   );
   const [errorMsg, setErrorMsg] = useState("");
+
+  const [code, setCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [codeError, setCodeError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,6 +34,28 @@ export default function LoginPage() {
     } else {
       setStatus("sent");
     }
+  }
+
+  async function handleVerifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setVerifying(true);
+    setCodeError("");
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: code.trim(),
+      type: "email",
+    });
+
+    if (error) {
+      setCodeError("コードが正しくないか、期限切れです。もう一度お試しください。");
+      setVerifying(false);
+      return;
+    }
+
+    trackEvent("login_success", { method: "otp_code" });
+    window.location.href = "/library";
   }
 
   return (
@@ -66,10 +93,63 @@ export default function LoginPage() {
         </p>
 
         {status === "sent" ? (
-          <div style={{ marginTop: 24, fontSize: 14, color: "#33415C" }}>
-            <p>📩 {email} にログインリンクを送りました。</p>
-            <p style={{ color: "#7A88A3", fontSize: 12 }}>
-              メール内のリンクをタップしてログインしてください。
+          <div style={{ marginTop: 24 }}>
+            <p style={{ fontSize: 14, color: "#33415C" }}>
+              📩 {email} に確認コードを送りました。
+            </p>
+            <p style={{ color: "#7A88A3", fontSize: 12, marginBottom: 16 }}>
+              メールに書かれている6桁のコードを、下に入力してください。
+            </p>
+            <form onSubmit={handleVerifyCode}>
+              <input
+                type="text"
+                inputMode="numeric"
+                required
+                placeholder="123456"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                maxLength={6}
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  border: "2px solid #E3ECF3",
+                  borderRadius: 12,
+                  padding: "14px",
+                  fontSize: 22,
+                  letterSpacing: 6,
+                  textAlign: "center",
+                  outline: "none",
+                  fontFamily: "inherit",
+                }}
+              />
+              <button
+                type="submit"
+                disabled={verifying}
+                className="font-display"
+                style={{
+                  width: "100%",
+                  marginTop: 12,
+                  background: "#FF8FA0",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "12px",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  opacity: verifying ? 0.6 : 1,
+                }}
+              >
+                {verifying ? "確認中..." : "コードでログイン"}
+              </button>
+              {codeError && (
+                <p style={{ color: "#E06B7D", fontSize: 12, marginTop: 8 }}>
+                  {codeError}
+                </p>
+              )}
+            </form>
+            <p style={{ color: "#B0BBCC", fontSize: 11, marginTop: 16 }}>
+              または、メール内のリンクをタップしてもログインできます。
             </p>
           </div>
         ) : (
@@ -109,7 +189,7 @@ export default function LoginPage() {
                 opacity: status === "sending" ? 0.6 : 1,
               }}
             >
-              {status === "sending" ? "送信中..." : "ログインリンクを送る"}
+              {status === "sending" ? "送信中..." : "ログインコードを送る"}
             </button>
             {status === "error" && (
               <p style={{ color: "#E06B7D", fontSize: 12, marginTop: 8 }}>
@@ -128,3 +208,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

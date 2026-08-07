@@ -36,6 +36,7 @@ import RelatedBooks from "@/components/RelatedBooks";
 import { buildRakutenBookLink, buildRakutenKoboLink, buildAmazonBookLink } from "@/lib/affiliate";
 import { getLevelInfo } from "@/lib/gamification";
 import { generateShareImage, generateBookShareImage } from "@/lib/shareImage";
+import { trackEvent } from "@/lib/analytics";
 import { BarChart3, Share2, Users } from "lucide-react";
 
 type ScanStatus =
@@ -217,6 +218,18 @@ export default function BookShelfClient({
     return () => stopCameraScan();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("login") === "1") {
+      trackEvent("login_success", { method: "magic_link" });
+      params.delete("login");
+      const newUrl =
+        window.location.pathname +
+        (params.toString() ? `?${params.toString()}` : "");
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, []);
+
   async function startCameraScan() {
     setScanStatus("camera");
     scanLockRef.current = false;
@@ -271,6 +284,7 @@ export default function BookShelfClient({
       setScannedCoverUrl(data.cover_image_url ?? null);
       setScanStatus("found");
       setScannedBadge(true);
+      trackEvent("barcode_scanned", { success: true });
     } catch {
       setScanStatus("not_found");
     }
@@ -344,8 +358,13 @@ export default function BookShelfClient({
         }
       );
     } else {
+      const isFirstBook = totalBooks === 0;
       runAction(async () => {
         await addBook(payload);
+      });
+      trackEvent("book_added", {
+        first_book: isFirstBook,
+        via_scan: !!scannedIsbn,
       });
     }
   }
