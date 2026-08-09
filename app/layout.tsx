@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     siteName: "ブックホーム",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "ブックホーム｜家族の本棚を育てる読書記録アプリ",
     description:
       "家族みんなでも、こども専用でも。バーコードで本を登録し、読書記録・思い出を残せる無料の本棚アプリ。",
