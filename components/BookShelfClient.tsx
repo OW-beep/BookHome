@@ -39,6 +39,9 @@ import { generateShareImage, generateBookShareImage } from "@/lib/shareImage";
 import { trackEvent } from "@/lib/analytics";
 import { BarChart3, Share2, Users } from "lucide-react";
 
+// 本の登録数がこの数に達したときだけ、控えめにシェアを促す
+const SHARE_MILESTONES = [1, 10, 30, 50, 100, 200, 300];
+
 type ScanStatus =
   | "idle"
   | "camera"
@@ -73,6 +76,7 @@ export default function BookShelfClient({
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialFamilyMembers);
   const [isPending, startTransition] = useTransition();
   const [errorToast, setErrorToast] = useState<string | null>(null);
+  const [milestoneToast, setMilestoneToast] = useState<number | null>(null);
 
   function runAction(fn: () => Promise<void>, onError?: () => void) {
     startTransition(async () => {
@@ -359,6 +363,7 @@ export default function BookShelfClient({
       );
     } else {
       const isFirstBook = totalBooks === 0;
+      const newCount = totalBooks + 1;
       runAction(async () => {
         await addBook(payload);
       });
@@ -366,6 +371,14 @@ export default function BookShelfClient({
         first_book: isFirstBook,
         via_scan: !!scannedIsbn,
       });
+      // 節目の冊数のときだけ、控えめにシェアを促す（毎回だとうるさいため）
+      if (SHARE_MILESTONES.includes(newCount)) {
+        setTimeout(() => {
+          setMilestoneToast(newCount);
+          trackEvent("share_prompt_shown", { milestone: newCount });
+          setTimeout(() => setMilestoneToast((cur) => (cur === newCount ? null : cur)), 8000);
+        }, 700);
+      }
     }
   }
 
@@ -506,6 +519,9 @@ export default function BookShelfClient({
         .bh-nudge { max-width: 900px; margin: 0 auto; padding: 0 20px; }
         .bh-nudge-inner { background: #FFF4E5; border-radius: 14px; padding: 10px 16px; font-size: 12px; color: #9A7B3F; text-align: center; }
         .bh-error-toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #33415C; color: #fff; padding: 12px 20px; border-radius: 999px; font-size: 13px; font-weight: 700; box-shadow: 0 6px 16px rgba(0,0,0,0.2); z-index: 100; max-width: 90vw; text-align: center; }
+        .bh-milestone-toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #FF8FA0; color: #fff; padding: 10px 10px 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 700; box-shadow: 0 6px 16px rgba(255,143,160,0.4); z-index: 100; max-width: 92vw; display: flex; align-items: center; gap: 10px; }
+        .bh-milestone-toast button { background: #fff; color: #FF8FA0; border: none; border-radius: 999px; padding: 7px 14px; font-weight: 900; font-size: 12px; cursor: pointer; white-space: nowrap; }
+        .bh-milestone-toast .bh-milestone-close { background: transparent; color: #fff; opacity: 0.8; padding: 4px; font-size: 14px; }
         .bh-search { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 14px; padding: 8px 14px; box-shadow: 0 2px 0 rgba(51,65,92,0.06); flex: 1; min-width: 160px; }
         .bh-search input { border: none; outline: none; font-family: inherit; font-size: 14px; width: 100%; background: transparent; color: #33415C; }
         .bh-genre-chips { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -1155,7 +1171,7 @@ export default function BookShelfClient({
               const now = new Date();
               return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
             }).length;
-            return `${familyName ? familyName + "の" : ""}今月${monthCount}冊読みました📚 #ブックホーム`;
+            return `${familyName ? familyName + "の" : ""}今月${monthCount}冊読みました📚 #ブックホーム\nhttps://bookhome.jp/go/share-monthly`;
           }}
           buildImage={(familyName) => {
             const monthCount = readingLogs.filter((l) => {
@@ -1183,7 +1199,7 @@ export default function BookShelfClient({
           <ShareModal
             heading="この本をシェアする"
             buildShareText={(familyName) =>
-              `${familyName ? familyName + "が" : ""}「${book.title}」を読みました📚 #ブックホーム`
+              `${familyName ? familyName + "が" : ""}「${book.title}」を読みました📚 #ブックホーム\nhttps://bookhome.jp/go/share-book`
             }
             buildImage={(familyName) =>
               generateBookShareImage({
@@ -1223,6 +1239,31 @@ export default function BookShelfClient({
       )}
 
       {errorToast && <div className="bh-error-toast">⚠️ {errorToast}</div>}
+      {milestoneToast !== null && (
+        <div className="bh-milestone-toast">
+          <span>
+            {milestoneToast === 1
+              ? "🎉 はじめての1冊、登録できました！"
+              : `🎉 ${milestoneToast}冊、登録できました！`}
+          </span>
+          <button
+            onClick={() => {
+              setMilestoneToast(null);
+              setShowShare(true);
+              trackEvent("share_prompt_clicked", { milestone: milestoneToast });
+            }}
+          >
+            シェアする
+          </button>
+          <button
+            className="bh-milestone-close"
+            onClick={() => setMilestoneToast(null)}
+            aria-label="閉じる"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

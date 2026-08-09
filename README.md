@@ -70,6 +70,11 @@ Supabaseダッシュボード → Authentication → Emails → Templates → Ma
 - `login_success`：ログイン完了時（`method`: `magic_link` または `otp_code`）
 - `barcode_scanned`：バーコードスキャンで書籍情報が見つかった時
 - `book_added`：本が登録された時（`first_book`: 初回登録かどうか、`via_scan`: スキャン経由かどうか）
+- `share_prompt_shown` / `share_prompt_clicked`：本の登録数が節目（1・10・30・50・100・200・300冊）に達し、シェアを促すトーストが表示・クリックされた時（`milestone`: 到達した冊数）
+
+## Xなどへのリンクは `/go/{名前}` を使う
+
+`/go/devlog1` のような短いリンクにアクセスすると、`utm_source=x&utm_medium=social&utm_campaign=devlog1` を付けてトップページへリダイレクトします。GA4が自動でキャンペーンごとの流入を記録するので、投稿ごとに `campaign` 名を変えるだけで効果測定ができます（詳細は `app/go/[campaign]/route.ts` 参照）。アプリ内の「シェアする」ボタンも、この仕組みを使ってリンク（`/go/share-monthly`・`/go/share-book`）を自動で付けています。
 
 ## Google Analyticsを有効にする
 
