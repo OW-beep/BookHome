@@ -71,6 +71,7 @@ Supabaseダッシュボード → Authentication → Emails → Templates → Ma
 - `barcode_scanned`：バーコードスキャンで書籍情報が見つかった時
 - `book_added`：本が登録された時（`first_book`: 初回登録かどうか、`via_scan`: スキャン経由かどうか）
 - `share_prompt_shown` / `share_prompt_clicked`：本の登録数が節目（1・10・30・50・100・200・300冊）に達し、シェアを促すトーストが表示・クリックされた時（`milestone`: 到達した冊数）
+- `affiliate_click`：楽天ブックス／楽天Kobo／Amazonのアフィリエイトリンクがクリックされた時（`channel`: `rakuten_books`/`rakuten_kobo`/`amazon`、`placement`: 表示箇所、`title`: 本のタイトル）。アフィリエイト収益が唯一のマネタイズ手段になったため、GA4で`affiliate_click`もキーイベントに指定し、「どの表示箇所が一番クリックされているか」を`placement`別に見ることをおすすめします。
 
 ## Xなどへのリンクは `/go/{名前}` を使う
 

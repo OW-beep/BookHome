@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { pickRandomRecommendations, pickByAgeBand } from "@/lib/recommendations";
 import { buildRakutenBookLink } from "@/lib/affiliate";
+import { trackEvent } from "@/lib/analytics";
 
 type TrendingBook = {
   title: string;
@@ -97,6 +98,7 @@ export default function RecommendedBooks() {
                 href={b.url}
                 target="_blank"
                 rel="noopener noreferrer nofollow sponsored"
+                onClick={() => trackEvent("affiliate_click", { channel: "rakuten_books", placement: "trending", title: b.title })}
               >
                 {b.imageUrl ? (
                   <img className="rb-cover" src={b.imageUrl} alt={b.title} />
@@ -114,6 +116,7 @@ export default function RecommendedBooks() {
                 href={buildRakutenBookLink({ title: `${b.title} ${b.author}` })}
                 target="_blank"
                 rel="noopener noreferrer nofollow sponsored"
+                onClick={() => trackEvent("affiliate_click", { channel: "rakuten_books", placement: "age_recommendation", title: b.title })}
               >
                 <div className="rb-emoji">{b.emoji}</div>
                 <div className="rb-title">{b.title}</div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { pickByGenre, RecommendedBook } from "@/lib/recommendations";
 import { buildRakutenBookLink } from "@/lib/affiliate";
+import { trackEvent } from "@/lib/analytics";
 
 type AuthorBook = { title: string; coverImageUrl: string | null };
 type Product = { title: string; price: number; imageUrl: string | null; url: string };
@@ -86,6 +87,7 @@ export default function RelatedBooks({
                 href={buildRakutenBookLink({ title: b.title })}
                 target="_blank"
                 rel="noopener noreferrer nofollow sponsored"
+                onClick={() => trackEvent("affiliate_click", { channel: "rakuten_books", placement: "related_author", title: b.title })}
               >
                 {b.coverImageUrl ? (
                   <img className="related-cover-img" src={b.coverImageUrl} alt={b.title} />
@@ -110,6 +112,7 @@ export default function RelatedBooks({
                 href={buildRakutenBookLink({ title: `${b.title} ${b.author}` })}
                 target="_blank"
                 rel="noopener noreferrer nofollow sponsored"
+                onClick={() => trackEvent("affiliate_click", { channel: "rakuten_books", placement: "related_genre", title: b.title })}
               >
                 <div className="related-cover-emoji" style={{ background: "#FFF4E5" }}>{b.emoji}</div>
                 <div className="related-card-title">{b.title}</div>

@@ -927,6 +927,7 @@ export default function BookShelfClient({
                   href={buildRakutenBookLink({ isbn: selectedBook.isbn, title: selectedBook.title })}
                   target="_blank"
                   rel="noopener noreferrer nofollow sponsored"
+                  onClick={() => trackEvent("affiliate_click", { channel: "rakuten_books", placement: "book_detail", title: selectedBook.title })}
                 >
                   🛒 楽天ブックスで探す <span className="bh-pr-badge">PR</span>
                 </a>
@@ -935,6 +936,7 @@ export default function BookShelfClient({
                   href={buildRakutenKoboLink({ title: selectedBook.title })}
                   target="_blank"
                   rel="noopener noreferrer nofollow sponsored"
+                  onClick={() => trackEvent("affiliate_click", { channel: "rakuten_kobo", placement: "book_detail", title: selectedBook.title })}
                 >
                   📱 Koboで電子書籍を探す <span className="bh-pr-badge">PR</span>
                 </a>
@@ -943,6 +945,7 @@ export default function BookShelfClient({
                   href={buildAmazonBookLink({ isbn: selectedBook.isbn, title: selectedBook.title })}
                   target="_blank"
                   rel="noopener noreferrer nofollow sponsored"
+                  onClick={() => trackEvent("affiliate_click", { channel: "amazon", placement: "book_detail", title: selectedBook.title })}
                 >
                   📦 Amazonで探す <span className="bh-pr-badge">PR</span>
                 </a>
