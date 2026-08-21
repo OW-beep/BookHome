@@ -9,9 +9,33 @@ export function generateStaticParams() {
 export function generateMetadata({ params }: { params: { slug: string } }) {
   const article = getArticleBySlug(params.slug);
   if (!article) return {};
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://example.vercel.app";
+  const displayTitle = article.seoTitle
+    ? `${article.seoTitle}｜ブックホーム`
+    : `${article.title}｜ブックホーム`;
+
   return {
-    title: `${article.title}｜ブックホーム`,
+    title: displayTitle,
     description: article.excerpt,
+    keywords: article.keywords,
+    alternates: {
+      canonical: `${baseUrl}/articles/${article.slug}`,
+    },
+    openGraph: {
+      title: displayTitle,
+      description: article.excerpt,
+      type: "article",
+      locale: "ja_JP",
+      siteName: "ブックホーム",
+      publishedTime: article.publishedAt,
+      url: `${baseUrl}/articles/${article.slug}`,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: displayTitle,
+      description: article.excerpt,
+    },
   };
 }
 
@@ -19,8 +43,26 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   const article = getArticleBySlug(params.slug);
   if (!article) return notFound();
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://example.vercel.app";
+  const relatedArticles = ARTICLES.filter((a) => a.slug !== article.slug).slice(0, 3);
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.seoTitle || article.title,
+    description: article.excerpt,
+    datePublished: article.publishedAt,
+    author: { "@type": "Organization", name: "ブックホーム" },
+    publisher: { "@type": "Organization", name: "ブックホーム" },
+    mainEntityOfPage: `${baseUrl}/articles/${article.slug}`,
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #EAF4FB 0%, #F3F8FC 300px, #F3F8FC 100%)" }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <style>{`
         .ap-wrap { max-width: 680px; margin: 0 auto; padding: 56px 20px 80px; font-family: 'M PLUS Rounded 1c', sans-serif; color: #33415C; }
         .ap-title { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900; font-size: 26px; line-height: 1.5; margin-bottom: 10px; }
@@ -30,6 +72,10 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         .ap-cta { background: #FFFBF3; border-radius: 18px; padding: 22px; text-align: center; margin-top: 48px; }
         .ap-cta-btn { display: inline-block; margin-top: 12px; background: #FF8FA0; color: #fff; text-decoration: none; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 14px; padding: 12px 26px; border-radius: 999px; box-shadow: 0 4px 0 #E06B7D; }
         .ap-back { display: inline-block; margin-top: 30px; font-size: 13px; color: #7FB8E0; text-decoration: none; }
+        .ap-related { margin-top: 40px; }
+        .ap-related-title { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 14px; }
+        .ap-related-list { display: flex; flex-direction: column; gap: 10px; }
+        .ap-related-link { display: block; background: #fff; border-radius: 12px; padding: 14px 16px; text-decoration: none; color: #33415C; font-size: 13px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
       `}</style>
       <div className="ap-wrap">
         <h1 className="ap-title">{article.title}</h1>
@@ -51,6 +97,19 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           </div>
           <Link className="ap-cta-btn" href="/login">無料ではじめる</Link>
         </div>
+
+        {relatedArticles.length > 0 && (
+          <div className="ap-related">
+            <div className="ap-related-title">関連記事</div>
+            <div className="ap-related-list">
+              {relatedArticles.map((a) => (
+                <Link key={a.slug} className="ap-related-link" href={`/articles/${a.slug}`}>
+                  {a.title}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Link className="ap-back" href="/articles">← 読みもの一覧に戻る</Link>
       </div>

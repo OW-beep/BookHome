@@ -1,6 +1,8 @@
 export type Article = {
   slug: string;
   title: string;
+  seoTitle?: string;
+  keywords?: string[];
   excerpt: string;
   publishedAt: string;
   body: { heading?: string; text: string }[];
@@ -10,6 +12,8 @@ export const ARTICLES: Article[] = [
   {
     slug: "yomikikase-itsumade",
     title: "📖 絵本の読み聞かせ、いつまで続ける？「毎日やるべき」を疑ってみたお話",
+    seoTitle: "読み聞かせはいつまで？毎日やるべき論を疑ってみた話",
+    keywords: ["読み聞かせ いつまで", "読み聞かせ 毎日", "絵本 読み聞かせ べき論"],
     excerpt: "3人の子どもに読み聞かせをしてきて気づいた、「べき論」との、ちょうどいい距離の取り方です🌙",
     publishedAt: "2026-08-01",
     body: [
@@ -39,6 +43,8 @@ export const ARTICLES: Article[] = [
   {
     slug: "dokusho-kiroku-tsukekata",
     title: "📔 子どもの読書記録、一度挫折しました。それでも続けられるようになった理由",
+    seoTitle: "子どもの読書記録が続かない人へ｜挫折してから続けられた理由",
+    keywords: ["読書記録 続かない", "子供 読書記録 アプリ", "読書記録 つけ方"],
     excerpt: "アプリでの記録に挫折した私が、「読めたらOK」というゆるさにたどり着くまでのお話です🌼",
     publishedAt: "2026-08-01",
     body: [
@@ -69,6 +75,8 @@ export const ARTICLES: Article[] = [
   {
     slug: "ehon-osusume-nenreibetsu",
     title: "😄『だるまさんが』で笑い転げる2歳と、おばけに真剣な顔で向き合う5歳",
+    seoTitle: "絵本の好みは年齢でこんなに違う｜2歳・5歳の反応を比べてみた",
+    keywords: ["絵本 年齢別 おすすめ", "2歳 絵本 好み", "5歳 絵本 好み"],
     excerpt: "3人きょうだいの絵本の好みを見ていて分かった、年齢による違いの正体です🧸",
     publishedAt: "2026-08-01",
     body: [
@@ -102,6 +110,8 @@ export const ARTICLES: Article[] = [
   {
     slug: "yomikikase-koka-kenkyu",
     title: "🔬 読み聞かせって、本当に意味があるの？分かっていることを調べてみました",
+    seoTitle: "読み聞かせの効果は本当にある？分かっていることをまとめました",
+    keywords: ["読み聞かせ 効果", "読み聞かせ 意味 ある", "絵本 効果 子供"],
     excerpt: "「これ、本当に子どものためになってるのかな」と思ったことがある方へ。今のところ分かっている効果を、やさしくまとめました🌱",
     publishedAt: "2026-08-05",
     body: [
@@ -133,6 +143,8 @@ export const ARTICLES: Article[] = [
   {
     slug: "hataraku-oya-yomikikase-kufu",
     title: "🏃‍♀️ 忙しい共働き家庭でも続けやすい、読み聞かせのちょっとした工夫",
+    seoTitle: "共働きでも続く読み聞かせの工夫｜忙しい家庭向けの時短アイデア",
+    keywords: ["読み聞かせ 共働き", "読み聞かせ 時間がない", "読み聞かせ 続け方"],
     excerpt: "「やったほうがいいのは分かってる、でも時間が…」という方へ。無理なく続けるための、小さな工夫を集めました⏰",
     publishedAt: "2026-08-10",
     body: [
@@ -168,6 +180,8 @@ export const ARTICLES: Article[] = [
   {
     slug: "yomikikase-nansai-made",
     title: "🎂 読み聞かせは何歳から？何歳まで？わが家の答えが定まるまで",
+    seoTitle: "読み聞かせは何歳から何歳まで？年齢別の目安をまとめました",
+    keywords: ["読み聞かせ 何歳から", "読み聞かせ 何歳まで", "絵本 開始時期"],
     excerpt: "「いつから始めて、いつやめるべき？」に、ようやく自分なりの答えが見えてきたお話です🕰️",
     publishedAt: "2026-08-12",
     body: [
@@ -199,6 +213,8 @@ export const ARTICLES: Article[] = [
   {
     slug: "hitoriyomi-ikou-taimingu",
     title: "🔤 「自分で読みたい」と言われた日。読み聞かせから読書への移行タイミング",
+    seoTitle: "読み聞かせから一人読みへ｜移行のサインと進め方",
+    keywords: ["読み聞かせ 卒業", "一人読み 移行", "読み聞かせ から 自分で読む"],
     excerpt: "長女が「もう読んでもらわなくていい」と言い出したときの、戸惑いと嬉しさのお話です📗",
     publishedAt: "2026-08-13",
     body: [
@@ -226,6 +242,8 @@ export const ARTICLES: Article[] = [
   {
     slug: "toshokan-vs-kounyu",
     title: "📖 図書館 vs 購入。3人の絵本と、わが家なりの付き合い方",
+    seoTitle: "絵本は図書館と購入どっちがいい？わが家の使い分けルール",
+    keywords: ["絵本 図書館 購入 どっち", "絵本 借りる 買う", "絵本 使い分け"],
     excerpt: "「借りる」と「買う」、結局どっちがいいの？を考えてみたら、答えは意外とシンプルでした🏛️",
     publishedAt: "2026-08-14",
     body: [
