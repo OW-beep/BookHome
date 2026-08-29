@@ -105,6 +105,15 @@ Supabaseダッシュボード → Authentication → Emails → Templates → Ma
 
 未設定の間も「Amazonで探す」リンクは通常のAmazon検索リンクとして機能します（成果報酬は発生しません）。
 
+## Supabaseの自動一時停止を防ぐ（Cron）
+
+Supabaseの無料プランは、一定期間（目安7日間）APIアクセスが無いとプロジェクトを自動的に一時停止します。これを防ぐため、`vercel.json`にVercel Cronを設定し、毎日1回`/api/cron/keep-alive`にアクセスして軽いクエリをSupabaseに投げるようにしています。
+
+- 追加の作業は基本的に不要です。このリポジトリをVercelにデプロイすれば、`vercel.json`の設定が自動的に反映されます（Hobbyプランでも1日1回のCronは無料枠内で使えます）
+- 任意で、環境変数`CRON_SECRET`を設定すると、このエンドポイントを外部から誰でも叩けないように制限できます（Vercelは自動的に`Authorization: Bearer <CRON_SECRET>`を付けて呼び出します）。設定しなくても動作します
+- 停止時刻を変えたい場合は`vercel.json`の`schedule`（cron形式、現在は毎日18:00 UTC＝日本時間3:00）を編集してください
+- もし「Project is paused」の画面が出てしまった場合は、Supabaseダッシュボードで**Resume project**を押せば数分で復旧します（データは消えません）
+
 ## 楽天アフィリエイトを有効にする
 
 1. 楽天アフィリエイト（またはリンクシェア）に登録・審査申請

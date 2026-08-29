@@ -508,8 +508,6 @@ export default function BookShelfClient({
         .bh-logo-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
         .bh-logo-title { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900; font-size: 28px; color: #33415C; }
         .bh-tagline { margin-top: 6px; font-size: 12px; color: #7A88A3; font-weight: 500; }
-        .bh-articles-link { margin-top: 4px; font-size: 11px; color: #B0BBCC; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
-        .bh-articles-link:hover { color: #7A88A3; text-decoration: underline; }
         .bh-stats { display: flex; gap: 10px; max-width: 640px; margin: 16px auto 0; padding: 0 16px; flex-wrap: wrap; justify-content: center; }
         .bh-stat-chip { background: #FFFBF3; border-radius: 18px; padding: 10px 16px; box-shadow: 0 3px 0 rgba(51,65,92,0.08); display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; min-width: 92px; justify-content: center; }
         .bh-stat-num { font-family: 'Zen Maru Gothic', sans-serif; font-size: 18px; }
@@ -635,7 +633,6 @@ export default function BookShelfClient({
           <span className="bh-logo-title">ブックホーム</span>
         </div>
         <div className="bh-tagline">家族みんなでも、こども専用でも。</div>
-        <a href="/articles" className="bh-articles-link">📖 読みもの</a>
 
         <div className="bh-level-bar-wrap">
           <div className="bh-level-label">
