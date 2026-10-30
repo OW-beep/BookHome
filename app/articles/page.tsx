@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSortedPostsData } from "@/lib/posts";
-import { CATEGORIES } from "@/lib/categories";
+import { CATEGORIES, CATEGORY_GROUPS } from "@/lib/categories";
 import PostCard from "@/components/PostCard";
 import SiteFooter from "@/components/SiteFooter";
 import { SITE_URL } from "@/lib/site";
@@ -24,15 +24,25 @@ export default function ArticlesIndexPage() {
           本・読書・読み聞かせの「困った」「わからない」にこたえる読みものです。
         </p>
 
-        <nav aria-label="カテゴリ" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 32 }}>
-          {CATEGORIES.filter((c) => counts.get(c.label)).map((c) => (
-            <Link key={c.slug} href={`/category/${c.slug}`} style={{ background: "#fff", border: "1px solid #D9E4EF", borderRadius: 999, padding: "6px 14px", fontSize: 13, color: "#33415C", textDecoration: "none" }}>
-              {c.label}（{counts.get(c.label)}）
-            </Link>
-          ))}
-        </nav>
-
-        {posts.map((p) => <PostCard key={p.slug} post={p} />)}
+        {CATEGORY_GROUPS.map((g) => {
+          const cats = CATEGORIES.filter((c) => c.group === g.slug && counts.get(c.label));
+          const groupPosts = posts.filter((p) => cats.some((c) => c.label === p.category));
+          if (groupPosts.length === 0) return null;
+          return (
+            <section key={g.slug} style={{ marginBottom: 40 }}>
+              <h2 style={{ fontFamily: "'Zen Maru Gothic', sans-serif", fontWeight: 900, fontSize: 21, margin: "0 0 6px" }}>{g.label}</h2>
+              <p style={{ fontSize: 13, color: "#7A88A3", lineHeight: 1.8, margin: "0 0 14px" }}>{g.description}</p>
+              <nav aria-label={`${g.label}のカテゴリ`} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+                {cats.map((c) => (
+                  <Link key={c.slug} href={`/category/${c.slug}`} style={{ background: "#fff", border: "1px solid #D9E4EF", borderRadius: 999, padding: "6px 14px", fontSize: 13, color: "#33415C", textDecoration: "none" }}>
+                    {c.label}（{counts.get(c.label)}）
+                  </Link>
+                ))}
+              </nav>
+              {groupPosts.map((p) => <PostCard key={p.slug} post={p} />)}
+            </section>
+          );
+        })}
 
         <Link href="/" style={{ display: "inline-block", marginTop: 30, fontSize: 13, color: "#7FB8E0", textDecoration: "none" }}>← トップページに戻る</Link>
       </div>

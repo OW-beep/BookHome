@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CATEGORIES } from "@/lib/categories";
+import { CATEGORIES, CATEGORY_GROUPS } from "@/lib/categories";
 import { getSortedPostsData } from "@/lib/posts";
 import SiteFooter from "@/components/SiteFooter";
 import { SITE_URL } from "@/lib/site";
@@ -30,18 +30,23 @@ export default function SitemapPage() {
         <ul>
           <li><Link href="/articles" style={a}>読みもの一覧</Link></li>
         </ul>
-        {CATEGORIES.map((c) => {
-          const list = posts.filter((p) => p.category === c.label);
-          if (list.length === 0) return null;
-          return (
-            <div key={c.slug}>
-              <h3 style={{ fontSize: 15, margin: "16px 0 4px" }}><Link href={`/category/${c.slug}`} style={a}>{c.label}</Link></h3>
-              <ul>
-                {list.map((p) => <li key={p.slug}><Link href={`/articles/${p.slug}`} style={a}>{p.title}</Link></li>)}
-              </ul>
-            </div>
-          );
-        })}
+        {CATEGORY_GROUPS.map((g) => (
+          <div key={g.slug}>
+            <h3 style={{ fontSize: 16, margin: "20px 0 4px" }}>{g.label}</h3>
+            {CATEGORIES.filter((c) => c.group === g.slug).map((c) => {
+              const list = posts.filter((p) => p.category === c.label);
+              if (list.length === 0) return null;
+              return (
+                <div key={c.slug}>
+                  <h4 style={{ fontSize: 14, margin: "10px 0 2px" }}><Link href={`/category/${c.slug}`} style={a}>{c.label}</Link></h4>
+                  <ul>
+                    {list.map((p) => <li key={p.slug}><Link href={`/articles/${p.slug}`} style={a}>{p.title}</Link></li>)}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        ))}
 
         <h2 style={h2}>サイト情報</h2>
         <ul>
