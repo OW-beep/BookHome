@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "48px 20px", fontFamily: "'M PLUS Rounded 1c', sans-serif", color: "#33415C", lineHeight: 1.8 }}>
       <h1 style={{ fontFamily: "'Zen Maru Gothic', sans-serif", fontSize: 24 }}>プライバシーポリシー</h1>
-      <p style={{ fontSize: 13, color: "#7A88A3" }}>最終更新日：2026年8月2日</p>
+      <p style={{ fontSize: 13, color: "#7A88A3" }}>最終更新日：2026年10月30日</p>
 
       <p>
         ブックホーム（以下「当サイト」）は、利用者の個人情報の保護を重要な責務と考え、以下のとおりプライバシーポリシーを定めます。
@@ -28,6 +28,15 @@ export default function PrivacyPage() {
         Cookieを使用することで当サイトは利用者のブラウザを識別できますが、個人を特定するものではありません。
         Google広告におけるCookieの利用方法については、Googleのポリシーをご確認ください。
       </p>
+      <p>
+        Google AdSenseを含む第三者配信事業者は、Cookieを使用して、利用者が当サイトや他のウェブサイトに過去にアクセスした際の情報に基づいて、広告を配信します。
+        Googleが広告Cookieを使用することにより、Googleやそのパートナーは、当サイトや他のサイトへのアクセス情報に基づいた広告を利用者に表示できます。
+      </p>
+      <p>
+        利用者は、<a href="https://adssettings.google.com/" target="_blank" rel="noopener noreferrer" style={{ color: "#7FB8E0" }}>Googleの広告設定</a>で、パーソナライズ広告を無効にすることができます。
+        また、<a href="https://www.aboutads.info/" target="_blank" rel="noopener noreferrer" style={{ color: "#7FB8E0" }}>www.aboutads.info</a>にアクセスすると、第三者配信事業者によるパーソナライズ広告のCookie使用を無効にできます。
+        Googleによる情報の取り扱いについては、<a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer" style={{ color: "#7FB8E0" }}>Googleのポリシーと規約</a>をご確認ください。
+      </p>
 
       <h2 style={{ fontFamily: "'Zen Maru Gothic', sans-serif", fontSize: 18, marginTop: 32 }}>3. アクセス解析ツール</h2>
       <p>
@@ -38,7 +47,7 @@ export default function PrivacyPage() {
 
       <h2 style={{ fontFamily: "'Zen Maru Gothic', sans-serif", fontSize: 18, marginTop: 32 }}>4. Cookieについて</h2>
       <p>
-        Cookieとは、サイト閲覧時にブラウザへ保存される情報です。当サイトはログイン状態の維持のためにCookieを使用します。
+        Cookieとは、サイト閲覧時にブラウザへ保存される情報です。当サイトはログイン状態の維持のためにCookieを使用します。また、広告配信事業者が、広告の配信のためにCookieを使用する場合があります。
         利用者はブラウザ設定によりCookieの保存を拒否することができますが、その場合ログイン機能がご利用いただけなくなります。
       </p>
 
