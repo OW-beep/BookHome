@@ -1,15 +1,13 @@
 import { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://example.vercel.app";
-
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/login", "/articles", "/about", "/contact", "/privacy", "/terms"],
-      disallow: ["/library", "/auth", "/api"],
+      allow: "/",
+      disallow: ["/library", "/auth", "/api", "/go"],
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

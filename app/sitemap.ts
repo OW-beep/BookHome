@@ -1,40 +1,31 @@
 import { MetadataRoute } from "next";
-import { ARTICLES } from "@/lib/articles";
+import { getSortedPostsData } from "@/lib/posts";
+import { CATEGORIES } from "@/lib/categories";
+import { SITE_URL } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://example.vercel.app";
+  const posts = getSortedPostsData().filter((p) => !p.noindex);
+  const usedCategories = CATEGORIES.filter((c) => posts.some((p) => p.category === c.label));
 
   return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/login`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/articles`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
+    { url: SITE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
+    { url: `${SITE_URL}/articles`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
+    ...usedCategories.map((c) => ({
+      url: `${SITE_URL}/category/${c.slug}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
+    ...posts.map((p) => ({
+      url: `${SITE_URL}/articles/${p.slug}`,
+      lastModified: new Date(p.updated || p.date),
+      changeFrequency: "monthly" as const,
       priority: 0.8,
-    },
-    ...["about", "contact", "privacy", "terms"].map((path) => ({
-      url: `${baseUrl}/${path}`,
-      lastModified: new Date(),
+    })),
+    { url: `${SITE_URL}/login`, changeFrequency: "monthly", priority: 0.4 },
+    ...["about", "editorial-policy", "sitemap", "contact", "privacy", "terms"].map((path) => ({
+      url: `${SITE_URL}/${path}`,
       changeFrequency: "yearly" as const,
       priority: 0.3,
-    })),
-    ...ARTICLES.map((a) => ({
-      url: `${baseUrl}/articles/${a.slug}`,
-      lastModified: new Date(a.publishedAt),
-      changeFrequency: "monthly" as const,
-      priority: 0.6,
     })),
   ];
 }

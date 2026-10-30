@@ -249,6 +249,10 @@ export default async function LandingPage() {
           {" ・ "}
           <a href="/about" style={{ color: "#B0BBCC" }}>運営者情報</a>
           {" ・ "}
+          <a href="/editorial-policy" style={{ color: "#B0BBCC" }}>編集方針</a>
+          {" ・ "}
+          <a href="/sitemap" style={{ color: "#B0BBCC" }}>サイトマップ</a>
+          {" ・ "}
           <a href="/contact" style={{ color: "#B0BBCC" }}>お問い合わせ</a>
         </div>
       </div>

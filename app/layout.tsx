@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { SITE_URL, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "ブックホーム｜家族の本棚を育てる読書記録アプリ",
   description:
     "家族みんなでも、こども専用でも。バーコードで本を登録し、読書記録・読み聞かせ記録・思い出を残せる無料の本棚アプリ。",
@@ -36,6 +38,14 @@ export const metadata: Metadata = {
   },
 };
 
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: SITE_URL,
+  description: "家族みんなでも、こども専用でも。バーコードで本を登録できる無料の読書記録アプリと、本・読書の困りごとにこたえる読みもの。",
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -54,6 +64,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
         {gaId && (
           <>
             <Script

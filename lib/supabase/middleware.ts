@@ -29,20 +29,12 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicRoute =
-    request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/auth") ||
-    request.nextUrl.pathname.startsWith("/api") ||
-    request.nextUrl.pathname.startsWith("/go/") ||
-    request.nextUrl.pathname.startsWith("/privacy") ||
-    request.nextUrl.pathname.startsWith("/terms") ||
-    request.nextUrl.pathname.startsWith("/articles") ||
-    request.nextUrl.pathname === "/sitemap.xml" ||
-    request.nextUrl.pathname === "/robots.txt" ||
-    request.nextUrl.pathname === "/manifest.webmanifest";
+  // ログインが必要なのは本棚（/library）だけ。それ以外は、新しく追加したページも含めて、誰でも見られる公開ページとして扱う。
+  // （以前は「公開ページの許可リスト」方式だったため、リストに載せ忘れたページ（ads.txt など）が、
+  //   ログインしていないと /login に飛ばされ、Googleのクローラーも読めなくなっていた）
+  const needsLogin = request.nextUrl.pathname.startsWith("/library");
 
-  if (!user && !isPublicRoute) {
+  if (!user && needsLogin) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
