@@ -3,6 +3,7 @@ import { getSortedPostsData } from "@/lib/posts";
 import { CATEGORIES } from "@/lib/categories";
 import { SITE_URL } from "@/lib/site";
 
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const posts = getSortedPostsData().filter((p) => !p.noindex);
   const usedCategories = CATEGORIES.filter((c) => posts.some((p) => p.category === c.label));

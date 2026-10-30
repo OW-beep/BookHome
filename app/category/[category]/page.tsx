@@ -7,6 +7,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PostCard from "@/components/PostCard";
 import SiteFooter from "@/components/SiteFooter";
 
+
 export function generateStaticParams() {
   return CATEGORIES.filter((c) => getPostsByCategory(c.label).length > 0).map((c) => ({ category: c.slug }));
 }

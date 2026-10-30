@@ -4,6 +4,7 @@ import { getSortedPostsData } from "@/lib/posts";
 import SiteFooter from "@/components/SiteFooter";
 import { SITE_URL } from "@/lib/site";
 
+
 export const metadata = {
   title: "サイトマップ｜ブックホーム",
   description: "ブックホームのページ一覧です。",

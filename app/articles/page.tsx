@@ -5,6 +5,7 @@ import PostCard from "@/components/PostCard";
 import SiteFooter from "@/components/SiteFooter";
 import { SITE_URL } from "@/lib/site";
 
+
 export const metadata = {
   title: "読みもの｜ブックホーム",
   description: "本・読書・読み聞かせの「困った」「わからない」にこたえる読みものです。読書記録、本棚の整理、本選び、積読までまとめています。",

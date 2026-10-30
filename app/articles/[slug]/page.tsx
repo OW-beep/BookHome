@@ -12,6 +12,7 @@ import PostCard from "@/components/PostCard";
 import AdUnit from "@/components/AdUnit";
 import SiteFooter from "@/components/SiteFooter";
 
+
 export function generateStaticParams() {
   return getAllPostSlugs();
 }
