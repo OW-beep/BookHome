@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ARTICLES } from "@/lib/articles";
+import SiteFooter from "@/components/SiteFooter";
 
 export const metadata = {
   title: "読みもの｜ブックホーム",
@@ -33,6 +34,7 @@ export default function ArticlesIndexPage() {
 
         <Link className="ai-back" href="/">← トップページに戻る</Link>
       </div>
+      <SiteFooter />
     </div>
   );
 }

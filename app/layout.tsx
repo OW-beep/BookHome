@@ -31,6 +31,9 @@ export const metadata: Metadata = {
   verification: {
     google: "T4_gFHNcVTITCIBRxOFrzaCjgVKhvo4VsrtoMROauXI",
   },
+  other: {
+    "google-adsense-account": "ca-pub-4630812027939211",
+  },
 };
 
 export default function RootLayout({
@@ -42,6 +45,14 @@ export default function RootLayout({
 
   return (
     <html lang="ja">
+      <head>
+        {/* Google AdSense（審査用コード。クローラーが初期HTMLで検出できるよう素の<script>で記述） */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4630812027939211"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body>
         {gaId && (
           <>

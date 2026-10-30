@@ -246,6 +246,10 @@ export default async function LandingPage() {
           <a href="/privacy" style={{ color: "#B0BBCC" }}>プライバシーポリシー</a>
           {" ・ "}
           <a href="/terms" style={{ color: "#B0BBCC" }}>利用規約</a>
+          {" ・ "}
+          <a href="/about" style={{ color: "#B0BBCC" }}>運営者情報</a>
+          {" ・ "}
+          <a href="/contact" style={{ color: "#B0BBCC" }}>お問い合わせ</a>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ARTICLES, getArticleBySlug } from "@/lib/articles";
+import SiteFooter from "@/components/SiteFooter";
 
 export function generateStaticParams() {
   return ARTICLES.map((a) => ({ slug: a.slug }));
@@ -19,6 +20,11 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   const article = getArticleBySlug(params.slug);
   if (!article) return notFound();
 
+  // 内部リンク：自分以外の記事を新しい順に3本
+  const related = ARTICLES.filter((a) => a.slug !== article.slug)
+    .sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1))
+    .slice(0, 3);
+
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #EAF4FB 0%, #F3F8FC 300px, #F3F8FC 100%)" }}>
       <style>{`
@@ -29,6 +35,8 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         .ap-text { font-size: 15px; line-height: 2; margin-bottom: 4px; white-space: pre-line; }
         .ap-cta { background: #FFFBF3; border-radius: 18px; padding: 22px; text-align: center; margin-top: 48px; }
         .ap-cta-btn { display: inline-block; margin-top: 12px; background: #FF8FA0; color: #fff; text-decoration: none; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 14px; padding: 12px 26px; border-radius: 999px; box-shadow: 0 4px 0 #E06B7D; }
+        .ap-rel-title { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 16px; margin: 44px 0 12px; }
+        .ap-rel-card { display: block; background: #FFFBF3; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; text-decoration: none; color: inherit; font-size: 14px; line-height: 1.6; }
         .ap-back { display: inline-block; margin-top: 30px; font-size: 13px; color: #7FB8E0; text-decoration: none; }
       `}</style>
       <div className="ap-wrap">
@@ -52,8 +60,16 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           <Link className="ap-cta-btn" href="/login">無料ではじめる</Link>
         </div>
 
+        <div className="ap-rel-title">あわせて読みたい</div>
+        {related.map((r) => (
+          <Link className="ap-rel-card" href={`/articles/${r.slug}`} key={r.slug}>
+            {r.title}
+          </Link>
+        ))}
+
         <Link className="ap-back" href="/articles">← 読みもの一覧に戻る</Link>
       </div>
+      <SiteFooter />
     </div>
   );
 }
