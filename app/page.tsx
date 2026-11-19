@@ -1,5 +1,6 @@
 import React from "react";
 import { createClient } from "@/lib/supabase/server";
+import PublicRecommendedBooks from "@/components/PublicRecommendedBooks";
 
 export const dynamic = "force-dynamic";
 
@@ -155,6 +156,8 @@ export default async function LandingPage() {
           </div>
           <div className="lp-plank" />
         </div>
+
+        <PublicRecommendedBooks />
 
         <div className="lp-steps">
           <h2 className="lp-section-title">つかいかたは3ステップ</h2>

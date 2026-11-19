@@ -20,6 +20,16 @@ export type PostMeta = {
 export type TocItem = { id: string; text: string };
 export type FaqItem = { q: string; a: string };
 
+// 記事に紐づく購入導線用の本。フロントマターの books: に書くと、
+// 記事末尾（アプリ登録CTAの前）に購入ボタン付きの本リストが表示されます。
+// isbn は13桁（ハイフンなし）。楽天ブックス・Amazonの検索キーに使われます。
+export type PostBook = {
+  title: string;
+  author?: string;
+  isbn?: string;
+  note?: string;
+};
+
 function slugifyHeading(text: string, usedIds: Set<string>): string {
   const base =
     text
@@ -169,6 +179,8 @@ export async function getPostData(slug: string) {
     toc,
     faq: (m.data.faq as FaqItem[] | undefined) ?? [],
     tldr: (m.data.tldr as string[] | undefined) ?? [],
+    books: (m.data.books as PostBook[] | undefined) ?? [],
+    booksHeading: m.data.booksHeading as string | undefined,
     title: m.data.title as string,
     category: m.data.category as string,
     date: m.data.date as string,
