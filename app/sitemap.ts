@@ -23,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     })),
     { url: `${SITE_URL}/login`, changeFrequency: "monthly", priority: 0.4 },
-    ...["about", "editorial-policy", "sitemap", "contact", "privacy", "terms", "bonus/ehon-guide"].map((path) => ({
+    ...["about", "editorial-policy", "sitemap", "contact", "privacy", "terms"].map((path) => ({
       url: `${SITE_URL}/${path}`,
       changeFrequency: "yearly" as const,
       priority: 0.3,
